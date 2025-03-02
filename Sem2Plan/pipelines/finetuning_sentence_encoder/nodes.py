@@ -35,7 +35,7 @@ from pddl.logic.base import And, Not, Or, BinaryOp, UnaryOp
 from pddl.core import Domain, Problem, Action, Requirements, Formula
 from pddl.logic.effects import AndEffect
 
-from better_leveraging_llm_to_construct_world_models.prompt_template.main_prompting_template import SIMPLER_PROMPT_CONTEXT, get_llm_input_dict
+from prompt_template.main_prompting_template import SIMPLER_PROMPT_CONTEXT, get_llm_input_dict
 from utils.import_py import import_from_filepath
 from utils.pddl_manipulation import get_manipulated_action_lst
 from utils.pddl_parser import get_action_schema_answer_str
