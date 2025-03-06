@@ -15,7 +15,7 @@ from pathlib import Path
 from tqdm.auto import tqdm 
 from icecream import ic
 
-from pipelines.compare_cos_sim_between_act_and_nl_desc.nodes import COMPARING_SETTING, PAIR_TYPE
+from pipelines.compare_cos_sim.nodes import COMPARING_SETTING, PAIR_TYPE
 from .finetune_dataset import create_eval_dataset, create_test_dataset, create_train_dataset
 import torch as th
 import seaborn as sns 
