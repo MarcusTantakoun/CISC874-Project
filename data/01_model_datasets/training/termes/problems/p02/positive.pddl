@@ -1,21 +1,20 @@
-(define (problem termes-00164-0048-4x3x4-random_towers_4x3_4_6_78)
+(define (problem termes-0036-4x3x3-random_towers_4x3_3_1_3)
 (:domain termes)
-; termes-00164-0048-4x3x4-random_towers_4x3_4_6_78
+; termes-0036-4x3x3-random_towers_4x3_3_1_3
 ; Initial state:
-;  0   0  R0D  0
-;  0   0   0   0
-;  0   0   0   0
+;  0   0  R0D  0 
+;  0   0   0   0 
+;  0   0   0   0 
 ; Goal state:
-;  4   4   0   2
-;  0   2   0   0
-;  2   0   0   2
-; Maximal height: 4
+;  0   0   0   0 
+;  0   0   0   0 
+;  0   3   0   0 
+; Maximal height: 3
 (:objects
     n0 - numb
     n1 - numb
     n2 - numb
     n3 - numb
-    n4 - numb
     pos-0-0 - position
     pos-0-1 - position
     pos-0-2 - position
@@ -46,7 +45,6 @@
     (SUCC n1 n0)
     (SUCC n2 n1)
     (SUCC n3 n2)
-    (SUCC n4 n3)
     (NEIGHBOR pos-0-0 pos-1-0)
     (NEIGHBOR pos-0-0 pos-0-1)
     (NEIGHBOR pos-0-1 pos-1-1)
@@ -83,21 +81,19 @@
     (NEIGHBOR pos-3-2 pos-3-1)
     (IS-DEPOT pos-2-0)
 )
-(:goal
-(and
-    (height pos-0-0 n4)
+(:goal (and
+    (height pos-0-0 n0)
     (height pos-0-1 n0)
-    (height pos-0-2 n2)
-    (height pos-1-0 n4)
-    (height pos-1-1 n2)
-    (height pos-1-2 n0)
+    (height pos-0-2 n0)
+    (height pos-1-0 n0)
+    (height pos-1-1 n0)
+    (height pos-1-2 n3)
     (height pos-2-0 n0)
     (height pos-2-1 n0)
     (height pos-2-2 n0)
-    (height pos-3-0 n2)
+    (height pos-3-0 n0)
     (height pos-3-1 n0)
-    (height pos-3-2 n2)
+    (height pos-3-2 n0)
     (not (has-block))
-)
-)
+))
 )

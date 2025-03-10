@@ -410,5 +410,8 @@ if __name__ == "__main__":
     # g = Grippers()
     # g.convert_pddl_to_nl("data/01_model_datasets/training/grippers")
     
-    l = Logistics()
-    l.convert_pddl_to_nl("data/01_model_datasets/training/logistics")
+    # l = Logistics()
+    # l.convert_pddl_to_nl("data/01_model_datasets/training/logistics")
+    
+    t = Termes()
+    t.convert_pddl_to_nl("data/01_model_datasets/training/termes")
