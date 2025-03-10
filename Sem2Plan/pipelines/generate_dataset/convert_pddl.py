@@ -22,6 +22,7 @@ def retrieve_problem_files(dataset_dir: str) -> list[str]:
 
 
 def write_anchor_files(problem_file: str, description: str):
+    
     anchor_dir = problem_file + "/anchor.nl"
 
     nl_file = os.path.splitext(anchor_dir)[0] + ".nl"
@@ -105,7 +106,7 @@ class Barman(Domain):
             description = ""
             count = count_types(task)
 
-            description += f'You have {count["shaker"]} shaker with {count["level"]} levels, {count["shot"]} shot glasses, {count["dispenser"]} dispensers for {count["ingredient"]} ingredients. \n'
+            description += f"You have {count['shaker']} shaker with {count['level']} levels, {count['shot']} shot glasses, {count['dispenser']} dispensers for {count['ingredient']} ingredients. \n"
             description += "The shaker and shot glasses are clean, empty, and on the table. Your left and right hands are empty. \n"
             cocktails = {obj.name: [0,0] for obj in task.objects if obj.type_tag == "cocktail"}
 
@@ -151,7 +152,7 @@ class Floortile(Domain):
                     row = max(int(obj.name.split('_')[1].split('-')[0]) + 1, row)
                     column = max(int(obj.name.split('-')[1]), column)
 
-            description += f'You have {row} rows and {column} columns of unpainted floor tiles. \n'
+            description += f"You have {row} rows and {column} columns of unpainted floor tiles. \n"
 
             tiles = []
             for obj in task.objects:
@@ -165,22 +166,25 @@ class Floortile(Domain):
                 if int(tile.name.split('-')[1]) == column:
                         description += "\n"
 
-            description += f'You have {robots} robot'
+            description += f"You have {robots} robot"
             description += 's. \n' if robots > 1 else '. \n'
-            description += f'Each robot can paint in color '
+            description += f"Each robot can paint in color "
             for color in colors[:-1]:
                 description += color + ' or '
             description += colors[-1] + '. \n'
 
             for atom in task.init:
+                if type(atom) is Predicate and atom.name == "robot-has":
+                    description += f"{atom.terms[0].name} start with the color {atom.terms[1].name}. \n"
 
+            for atom in task.init:
                 if type(atom) is Predicate and atom.name == "robot-at":
-                    description += f'{atom.terms[0].name} is at {atom.terms[1].name}. \n'
+                    description += f"{atom.terms[0].name} is at {atom.terms[1].name}. \n"
 
-            description += f'Your goal is to paint the grid in the following pattern: \n'
+            description += f"Your goal is to paint the grid in the following pattern: \n"
             for goal in task.goal.operands[:-1]:
-                description += f'{goal.terms[0].name} is {goal.terms[1].name}; '
-            description += f'{task.goal.operands[-1].terms[0].name} is {task.goal.operands[-1].terms[1].name}. \n'
+                description += f"{goal.terms[0].name} is {goal.terms[1].name}; "
+            description += f"{task.goal.operands[-1].terms[0].name} is {task.goal.operands[-1].terms[1].name}. \n"
 
             write_anchor_files(problem_file, description)
 
@@ -196,8 +200,8 @@ class Grippers(Domain):
             description = ""
             count = count_types(task)
 
-            description += f"You control {count["robot"]} robots, each robot has a left gripper and a right gripper. \n"
-            description += f"There are {count["room"]} rooms and {count["object"]} balls. \n"
+            description += f"You control {count['robot']} robots, each robot has a left gripper and a right gripper. \n"
+            description += f"There are {count['room']} rooms and {count['object']} balls. \n"
 
             robot_loc = {}
             object_loc = {}
@@ -234,20 +238,20 @@ class Storage(Domain):
             description = ""
 
             count = count_types(task)
-            count["depotarea"] = 0
-            count["containerarea"] = 0
+            count['depotarea'] = 0
+            count['containerarea'] = 0
             depot_names = []
             container_names = []
 
             for obj in task.objects:
                 if "depot48-" in obj.name:
-                    count["depotarea"] += 1
+                    count['depotarea'] += 1
                     depot_names.append(obj.name)
                 if "container-" in obj.name:
-                    count["containerarea"] += 1
+                    count['containerarea'] += 1
                     container_names.append(obj.name)
             
-            description += f"You have {count["depotarea"]} depot storeareas, {count["containerarea"]} container storeareas, {count["hoist"]} hoists, {count["crate"]} crates, 1 container0, 1 depot48, 1 loadarea. \n"
+            description += f"You have {count['depotarea']} depot storeareas, {count['containerarea']} container storeareas, {count['hoist']} hoists, {count['crate']} crates, 1 container0, 1 depot48, 1 loadarea. \n"
             description += f"Depot storeareas are: "
 
             for depot_name in depot_names:
@@ -259,12 +263,12 @@ class Storage(Domain):
             description += f"Here is a map of depot storeareas: \n"
             description += f"\n"    
 
-            if count["depotarea"]/2 < 2:
+            if count['depotarea']/2 < 2:
                 row = 1
-                col = count["depotarea"]
+                col = count['depotarea']
             else:
                 row = 2
-                col = int(count["depotarea"]/2)
+                col = int(count['depotarea']/2)
             for r in range(1, row+1):
                 for c in range(1, col+1):
                     description += f"depot48-{r}-{c} "
@@ -320,7 +324,7 @@ class Termes(Domain):
                     row = max(int(obj.name.split('-')[1]) + 1, row)
                     column = max(int(obj.name.split('-')[2]) + 1, column)
 
-            description += f'The robot is on a grid with {row} rows and {column} columns. \n'
+            description += f"The robot is on a grid with {row} rows and {column} columns. \n"
 
             positions = []
             for obj in task.objects:
@@ -335,12 +339,12 @@ class Termes(Domain):
 
             for atom in task.init:
                 if type(atom) is Predicate and atom.name == "at":
-                    description += f'The robot is at {atom.terms[0].name}. \n'
+                    description += f"The robot is at {atom.terms[0].name}. \n"
                 if type(atom) is Predicate and atom.name == "IS-DEPOT":
-                    description += f'The depot for new blocks is at {atom.terms[0].name}. \n'
+                    description += f"The depot for new blocks is at {atom.terms[0].name}. \n"
 
-            description += f'The maximum height of blocks is {numb - 1}. \n'
-            description += f'Your goal is to build blocks so that '
+            description += f"The maximum height of blocks is {numb - 1}. \n"
+            description += f"Your goal is to build blocks so that "
 
             for goal in task.goal.operands:
 
@@ -348,9 +352,9 @@ class Termes(Domain):
 
                     stacks.append((goal.terms[1].name[-1], goal.terms[0].name))
             for stack in stacks[:-1]:
-                description += f'the height at {stack[1]} is {stack[0]}, '
-            description += f'the height at {stacks[-1][1]} is {stacks[-1][0]}. \n'
-            description += f'You cannot have an unplaced block at the end.'
+                description += f"the height at {stack[1]} is {stack[0]}, "
+            description += f"the height at {stacks[-1][1]} is {stacks[-1][0]}. \n"
+            description += f"You cannot have an unplaced block at the end."
 
             write_anchor_files(problem_file, description)
 
@@ -366,9 +370,9 @@ class Tyreworld(Domain):
             description = ""
 
             count = count_types(task)
-            wheel_count = int(count["wheel"]/2)
+            wheel_count = int(count['wheel']/2)
             
-            description += f"You have a jack, a pump, a wrench, a boot, {count["hub"]} hubs, {count["nut"]} nuts, {wheel_count} flat tyres, and {wheel_count} intact tyres. \n"
+            description += f"You have a jack, a pump, a wrench, a boot, {count['hub']} hubs, {count['nut']} nuts, {wheel_count} flat tyres, and {wheel_count} intact tyres. \n"
             description += f"The jack, pump, wrench, and intact tyres are in the boot. \n"
             description += f"The boot is unlocked but is closed. \n"
             description += f"The intact tyres are not inflated. \n"
@@ -391,3 +395,20 @@ class Movie(Domain):
 
 class MiniGrid(Domain):
     pass
+
+
+if __name__ == "__main__":
+    # b = Blocksworld()
+    # b.convert_pddl_to_nl("data/01_model_datasets/training/blocksworld")
+    
+    # b = Barman()
+    # b.convert_pddl_to_nl("data/01_model_datasets/training/barman")
+    
+    # f = Floortile()
+    # f.convert_pddl_to_nl("data/01_model_datasets/training/floortile")
+    
+    # g = Grippers()
+    # g.convert_pddl_to_nl("data/01_model_datasets/training/grippers")
+    
+    l = Logistics()
+    l.convert_pddl_to_nl("data/01_model_datasets/training/logistics")

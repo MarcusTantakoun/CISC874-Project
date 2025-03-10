@@ -8,21 +8,21 @@ kedro-viz>=6.7.0
 pddl
 
 # Sentence Transformers
-sentence-transformers @ git+https://github.com/tomaarsen/sentence-transformers.git@feat/streaming_datasets
+# sentence-transformers @ git+https://github.com/tomaarsen/sentence-transformers.git@feat/streaming_datasets
 
-torch
-datasets~=2.20.0
-transformers[torch]
+# torch
+# datasets~=2.20.0
+# transformers[torch]
 
-# Utils 
-tqdm
-ipywidgets
-jupyterlab
-pandas
-einops
-matplotlib
-scikit-learn
-scipy
-seaborn
-natsort
-jsonlines
+# # Utils 
+# tqdm
+# ipywidgets
+# jupyterlab
+# pandas
+# einops
+# matplotlib
+# scikit-learn
+# scipy
+# seaborn
+# natsort
+# jsonlines
