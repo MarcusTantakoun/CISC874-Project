@@ -1,28 +1,24 @@
-kedro~=0.19.6
-kedro-datasets>=3.0; python_version >= "3.9"
-kedro-datasets>=1.0; python_version < "3.9"
-kedro-telemetry>=0.3.1
-kedro-viz>=6.7.0
-
 # PDDL requirements
 pddl
 
+tabulate
+
 # Sentence Transformers
-# sentence-transformers @ git+https://github.com/tomaarsen/sentence-transformers.git@feat/streaming_datasets
+sentence-transformers
 
-# torch
-# datasets~=2.20.0
-# transformers[torch]
+torch
+datasets~=2.20.0
+transformers[torch]
 
-# # Utils 
-# tqdm
-# ipywidgets
-# jupyterlab
-# pandas
-# einops
-# matplotlib
-# scikit-learn
-# scipy
-# seaborn
-# natsort
-# jsonlines
+# Utils 
+tqdm
+ipywidgets
+jupyterlab
+pandas
+einops
+matplotlib
+scikit-learn
+scipy
+seaborn
+natsort
+jsonlines
