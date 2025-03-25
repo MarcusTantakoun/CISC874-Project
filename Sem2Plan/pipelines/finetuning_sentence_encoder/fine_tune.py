@@ -101,7 +101,8 @@ def train_sentence_encoder(
         eval_dataloader = DataLoader(eval_examples, shuffle=False, batch_size=train_batch_size)
 
         # Define training loss function
-        train_loss = losses.BatchHardTripletLoss(sentence_model)
+        # train_loss = losses.BatchHardTripletLoss(sentence_model)
+        train_loss = losses.MultipleNegativesRankingLoss(sentence_model)
 
         # Define evaluator (optional)
         evaluator = TripletEvaluator.from_input_examples(eval_examples, name="eval")
