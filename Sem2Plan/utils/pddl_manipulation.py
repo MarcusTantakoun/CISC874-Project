@@ -16,7 +16,7 @@ MANIPULATION_TYPE_CONSTANT_LST = ["swap", "negate", "remove"]
 
 
 
-def get_manipulated_action_lst(
+def get_manipulated_problem_list(
     action_model: Action, manipulated_action_num, pollution_cap=2
 ):
     # this is also known as generating hard negatives by polluting with noise
