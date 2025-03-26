@@ -1,182 +1,181 @@
-# This file will manipulate pddl action schemas to get hard negatives examples.
-
+# This file will manipulate pddl problems to get hard negatives examples.
+import os
 from copy import deepcopy
 import numpy as np
-from pddl.logic import Predicate, Constant, Variable
-from pddl.logic.base import And, Not, Or, BinaryOp, UnaryOp
-from pddl.core import Domain, Problem, Action, Requirements, Formula
-from pddl.logic.effects import AndEffect
+from pddl.logic.base import And, Not
+from pddl.parser.problem import ProblemParser
+from pddl.core import Problem
 
-from utils.pddl_parser import (
-    get_action_schema_answer_str,
-    get_domain_model_from_name,
-)
 
 MANIPULATION_TYPE_CONSTANT_LST = ["swap", "negate", "remove"]
 
 
-
-def get_manipulated_problem_list(
-    action_model: Action, manipulated_action_num, pollution_cap=2
-):
-    # this is also known as generating hard negatives by polluting with noise
-    # type of manipulation: swap, negate, remove
-    # * swap means we swap the predicate between preconditions and effects
-    # * negate means we negate the predicate in the preconditions or effects
-    # * remove means we remove the predicate from the preconditions or effects
-    # * add (mutex exclusive) means we add a new predicate that is mutex exclusive with the existing predicates, is supported but not added here due to dependency on the fast-downward planner, check `mutex_exclusive_extractor.py` for more details`
-    # pollution_cap will control the maximum number of manipulations for each action
+def get_manipulated_problem_list(problem, manipulated_problem_num, pollution_cap=2):
+    """
+    Mutates a PDDL problem by manipulating its initial and goal states.
+    - Swap: Swaps predicates between the initial and goal states.
+    - Negate: Negates predicates in either the initial or goal state.
+    - Remove: Removes predicates from either the initial or goal state.
+    
+    Parameters:
+    - problem: The original PDDL problem object.
+    - manipulated_problem_num: Number of mutated problems to generate.
+    - pollution_cap: Maximum number of manipulations per problem.
+    
+    Returns:
+    - manipulated_problem_lst: List of manipulated problem objects.
+    - manipulation_details_lst: List of strings detailing each manipulation.
+    """
 
     # randomly select number of manipulations for each action
-    manipulated_action_lst = []
+    manipulated_problem_lst = []
     manipulation_details_lst = [] 
-    for _ in range(manipulated_action_num):
+    
+    for _ in range(manipulated_problem_num):
         # randomly select the number of manipulations
         num_manipulations = np.random.randint(1, pollution_cap + 1)
 
-        # get precondition and effect
-        precondition = action_model.precondition
-        effect = action_model.effect
-
-        if isinstance(precondition, BinaryOp):
-            precon_operands = list(precondition.operands)
-        else:
-            precon_operands = [precondition]
-
-        if isinstance(effect, AndEffect):
-            effect_operands = list(effect.operands)
-        else:
-            effect_operands = [effect]
-
-        updated_precon_operands = []
-        updated_effect_operands = []
-
-        available_manipulation_type_lst = deepcopy(MANIPULATION_TYPE_CONSTANT_LST)
+        # get initial and goal state predicates
+        init_state = list(problem.init)
+        goal_state = list(problem.goal.operands if isinstance(problem.goal, And) else [problem.goal])
+        
+        updated_init_state = []
+        updated_goal_state = []
+        
+        avail_manip_type_lst = deepcopy(MANIPULATION_TYPE_CONSTANT_LST)
         cur_manip_count = 0
-        manipulation_detail_str = ""
+        manip_detail_str = ""
+        
+        # go through manipulations
         while (
             cur_manip_count < num_manipulations
-            and len(available_manipulation_type_lst) > 0
-            and (len(precon_operands) > 0 or len(effect_operands) > 0)
+            and len(avail_manip_type_lst) > 0
+            and (len(init_state) > 0 or len(goal_state) > 0)
         ):
-            manip_type = np.random.choice(available_manipulation_type_lst)
-            # randomly select the predicate to manipulate
+            manip_type = np.random.choice(avail_manip_type_lst)
+            
+            # SWAP
             if manip_type == "swap":
-                if len(precon_operands) == 0 or len(effect_operands) == 0:
-                    # cannot swap if one of them is empty
-                    available_manipulation_type_lst.remove("swap")
+                if len(init_state) == 0 or len(goal_state) == 0:
+                    avail_manip_type_lst.remove("swap")
                     continue
-                # randomly select the predicate to swap
-                swap_idx = np.random.randint(0, len(precon_operands))
-                swap_predicate = precon_operands[swap_idx]
-                # randomly select the predicate to swap with
-                swap_with_idx = np.random.randint(0, len(effect_operands))
-                swap_with_predicate = effect_operands[swap_with_idx]
-                # swap the predicates
-                updated_precon_operands.append(swap_with_predicate)
-                updated_effect_operands.append(swap_predicate)
-                # pop the old
-                precon_operands.pop(swap_idx)
-                effect_operands.pop(swap_with_idx)
+                
+                swap_idx = np.random.randint(0, len(init_state))
+                swap_pred = init_state[swap_idx]
+                swap_with_idx = np.random.randint(0, len(goal_state))
+                swap_with_pred = goal_state[swap_with_idx]
+                
+                updated_init_state.append(swap_with_pred)
+                updated_goal_state.append(swap_pred)
+                
+                init_state.pop(swap_idx)
+                goal_state.pop(swap_with_idx)
+                
                 cur_manip_count += 1
-                manipulation_detail_str += f"swap {swap_predicate} with {swap_with_predicate}\n"
-
+                manip_detail_str += f"swap {swap_pred} with {swap_with_pred}\n"
+                
+            # NEGATE
             elif manip_type == "negate":
-                # randomly select the predicate to negate
-                # randomly pick precondition or effect
-                negation_idx = np.random.randint(0, 2)
-                if len(precon_operands) == 0:
-                    negation_idx = 1
-                elif len(effect_operands) == 0:
-                    negation_idx = 0
-
-                if negation_idx == 0 and len(precon_operands) > 0:
-                    # randomly select the predicate to negate
-                    negation_idx = np.random.randint(0, len(precon_operands))
-                    negated_predicate = precon_operands[negation_idx]
-                    if isinstance(negated_predicate, Not):
-                        # remove the negation
-                        updated_precon_operands.append(negated_predicate.argument)
+                neg_idx = np.random.randint(0,2)
+                if len(init_state) == 0:
+                    neg_idx = 1
+                elif len(goal_state) == 0:
+                    neg_idx = 0
+                
+                if neg_idx == 0 and len(init_state) > 0:
+                    neg_idx = np.random.randint(0, len(init_state))
+                    neg_pred = init_state[neg_idx]
+                    
+                    if isinstance(neg_pred, Not):
+                        updated_init_state.append(neg_pred.argument)
                     else:
-                        updated_precon_operands.append(Not(negated_predicate))
-                    # remove the old
-                    precon_operands.pop(negation_idx)
+                        updated_init_state.append(Not(neg_pred))
+                    
+                    init_state.pop(neg_idx)
                     cur_manip_count += 1
-                    manipulation_detail_str += f"negate {negated_predicate} in preconditions\n"
-                elif negation_idx == 1 and len(effect_operands) > 0:
-                    # randomly select the predicate to negate
-                    negation_idx = np.random.randint(0, len(effect_operands))
-                    negated_predicate = effect_operands[negation_idx]
-                    if isinstance(negated_predicate, Not):
-                        # remove the negation
-                        updated_effect_operands.append(negated_predicate.argument)
+                    manip_detail_str += f"negate {neg_pred} in initial state\n"
+                    
+                elif neg_idx == 1 and len(goal_state) > 0:
+                    neg_idx = np.random.randint(0, len(goal_state))
+                    neg_pred = goal_state[neg_idx]
+                    
+                    if isinstance(neg_pred, Not):
+                        updated_goal_state.append(neg_pred.argument)
                     else:
-                        updated_effect_operands.append(Not(negated_predicate))
-                    # remove the old
-                    effect_operands.pop(negation_idx)
+                        updated_goal_state.append(Not(neg_pred))
+                    
+                    goal_state.pop(neg_idx)
                     cur_manip_count += 1
-                    manipulation_detail_str += f"negate {negated_predicate} in effects\n"
+                    manip_detail_str += f"negate {neg_pred} in goal state\n"
                 else:
-                    # either precon_operands or effect_operands is empty
-                    available_manipulation_type_lst.remove("negate")
+                    avail_manip_type_lst.remove("negate")
                     continue
-
+            
+            # REMOVE
             elif manip_type == "remove":
-                # randomly select the predicate to remove
-                # randomly pick precondition or effect
-                removal_idx = np.random.randint(0, 2)
-                if len(precon_operands) <= 1:
-                    removal_idx = 1
-                elif len(effect_operands) <= 1:
-                    removal_idx = 0
-
-                if removal_idx == 0 and len(precon_operands) > 1:
-                    removal_idx = np.random.randint(0, len(precon_operands))
-                    manipulation_detail_str += f"remove {precon_operands[removal_idx]} from preconditions\n"
-                    precon_operands.pop(removal_idx)
+                rem_idx = np.random.randint(0,2)
+                if len(init_state) <= 1:
+                    rem_idx = 1
+                elif len(goal_state) <= 1:
+                    rem_idx = 0
+                
+                if rem_idx == 0 and len(init_state) > 1:
+                    rem_idx = np.random.randint(0, len(init_state))
+                    manip_detail_str += f"remove {init_state[rem_idx]} from initial state\n"
+                    init_state.pop(rem_idx)
                     cur_manip_count += 1
-                elif removal_idx == 1 and len(effect_operands) > 1:
-                    removal_idx = np.random.randint(0, len(effect_operands))
-                    manipulation_detail_str += f"remove {effect_operands[removal_idx]} from effects\n"
-                    effect_operands.pop(removal_idx)
+                    
+                elif rem_idx == 1 and len(goal_state) > 1:
+                    rem_idx = np.random.randint(0, len(goal_state))
+                    manip_detail_str += f"remove {goal_state[rem_idx]} from goal state\n"
+                    goal_state.pop(rem_idx)
                     cur_manip_count += 1
                 else:
-                    # either precon_operands or effect_operands is empty
-                    available_manipulation_type_lst.remove("remove")
+                    avail_manip_type_lst.remove("remove")
                     continue
-        # we extend the remaining predicates
-        updated_precon_operands.extend(precon_operands)
-        updated_effect_operands.extend(effect_operands)
-        # now we have the new preconditions and effects
-        # we build a new action
-        manipulated_action = Action(
-            name=action_model.name,
-            parameters=action_model.parameters,
-            precondition=And(*updated_precon_operands),
-            effect=AndEffect(*updated_effect_operands),
+        
+        updated_init_state.extend(init_state)
+        updated_goal_state.extend(goal_state)
+        
+        manip_problem = Problem(
+            name=problem.name,
+            domain_name=problem.domain_name,
+            objects=problem.objects,
+            init=updated_init_state,  # New mutated initial state
+            goal=And(*updated_goal_state) if len(updated_goal_state) > 1 else updated_goal_state[0],
         )
-        manipulated_action_lst.append(manipulated_action)
-        manipulation_details_lst.append(manipulation_detail_str)
-
-    return manipulated_action_lst, manipulation_details_lst
+        
+        manipulated_problem_lst.append(manip_problem)
+        manipulation_details_lst.append(manip_detail_str)
+        
+    return manipulated_problem_lst, manipulation_details_lst
+                
 
 
 if __name__ == "__main__":
-    # test
-    test_domain = "doors"
-    test_domain_model = get_domain_model_from_name(test_domain)
-    action_model_lst = list(test_domain_model.actions)
+    # Load PDDL problem file
+    problem_file_path = "data/01_model_datasets/training/blocksworld/problems/p00/positive.pddl"
+    
+    if not os.path.exists(problem_file_path):
+        raise FileNotFoundError(f"Problem file not found: {problem_file_path}")
+    
+    with open(problem_file_path, 'r') as f:
+        problem_str = f.read()
+    
+    problem = ProblemParser()(problem_str)
 
-    manipulated_action_lst, manipulation_details_lst = get_manipulated_action_lst(
-        action_model_lst[0], 2, 2
+    # Generate manipulated problems
+    manipulated_problem_lst, manipulation_details_lst = get_manipulated_problem_list(
+        problem, 10, 3
     )
 
-    for action, manipulate_detail in zip(manipulated_action_lst, manipulation_details_lst):
+    # Print results
+    for poll_problem, manipulate_detail in zip(manipulated_problem_lst, manipulation_details_lst):
         print("Manipulation Detail")
         print(manipulate_detail)
-        print("Polluted Action")
-        print(get_action_schema_answer_str(action, add_hint=False))
+        print("Polluted Problem")
+        print(poll_problem)
         print("\n\n")
 
-    print("Original Action")
-    print(get_action_schema_answer_str(action_model_lst[0], add_hint=False))
+    print("Original Problem")
+    print(problem)

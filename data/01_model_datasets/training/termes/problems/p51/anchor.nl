@@ -5,6 +5,6 @@ pos-2-0 pos-2-1 pos-2-2
 pos-3-0 pos-3-1 pos-3-2 
 The robot is at pos-2-0. 
 The depot for new blocks is at pos-2-0. 
-The maximum height of blocks is 4. 
-Your goal is to build blocks so that the height at pos-0-1 is 3, the height at pos-2-2 is 4, the height at pos-3-0 is 3. 
+The maximum height of blocks is 5. 
+Your goal is to build blocks so that the height at pos-1-0 is 4, the height at pos-2-1 is 5, the height at pos-3-0 is 5. 
 You cannot have an unplaced block at the end.

@@ -1,7 +1,7 @@
-import random
+import io
 import torch
 import os
-import glob
+from glob import glob
 import json
 import pandas as pd
 from datetime import datetime
@@ -13,10 +13,11 @@ from sentence_transformers.trainer import SentenceTransformerTrainer
 from sentence_transformers.training_args import BatchSamplers, SentenceTransformerTrainingArguments
 from transformers import TrainerCallback
 from datasets import load_dataset
-import tqdm
+from tqdm import tqdm
 from pddl.parser.problem import ProblemParser
+from pddl.core import Problem
 
-from utils.pddl_manipulation import get_manipulated_problem_list
+from ...utils.pddl_manipulation import get_manipulated_problem_list
 
 """
 This module sets up the training / testing dataset
@@ -34,26 +35,37 @@ class TorchDataset(torch.utils.data.Dataset):
         self.estimate_batch_size = estimate_batch_size
         self.expand_size = expand_size
         
+        # /*positive.pddl
+        
         # retrieve problem filepaths
-        problem_filepaths = glob(os.path.join(dir_path, f"**/problem.pddl"), recursive=True)
-        self.data = pd.DataFrame(columns=["problem_name", "model"])
+        problem_filepaths = glob(os.path.join(dir_path, "*/p*/p*"), recursive=True)
+        self.data = pd.DataFrame(columns=["problem_name", "problem_entry", "query_content", "positive_content"])
         
         self.manipulated_problem_model_dict = dict() # key is f'{problem_name}_{problem_model}'
         
         for problem_filepath in tqdm(problem_filepaths, desc="Setting up dataset"):
+            
+            print(f"Processing: {problem_filepath}")
+
+            anchor_path = f"{problem_filepath}/anchor.nl"
+            positive_path = f"{problem_filepath}/positive.pddl"
+            
+            with open(anchor_path, 'r') as f:
+                query_str = f.read()
 
             # retrieve problem name (problem_name)
-            with open(problem_filepath, 'r') as f:
+            with open(positive_path, 'r') as f:
                 problem_str = f.read()
             problem_model = ProblemParser()(problem_str)
             problem_name = problem_model.name
 
             problem_entry = "" # FIX THIS - retrieve path number
-            query_content = "" # FIX THIS - retrieve anchor query
-            positive_content = "" # FIX THIS - retrieve positive content
+            query_content = query_str
+            positive_content = problem_str
 
             # TO DO - create manipulate problem file function
-            manipulated_problem_list, _ = get_manipulated_problem_list(problem_model, self.estimate_batch_size)
+            manipulated_problem_list, _ = get_manipulated_problem_list(problem_model, self.estimate_batch_size, 3)
+            
             self.manipulated_problem_model_dict[f"{problem_name}_{problem_entry}"] = manipulated_problem_list
             
             # problem_name: domain of problem
@@ -66,25 +78,26 @@ class TorchDataset(torch.utils.data.Dataset):
             }
 
     def __len__(self):
-        if self.expand_size:
-            return len(self.data) * 50
-        else:
-            return len(self.data)
+        return len(self.data)
         
     def __getitem__(self, idx):
-        idx = idx % len(self.data)
-        idx_problem_name = self.data.iloc[idx]["problem_name"]
-        idx_problem_idx = self.data.iloc[idx]["problem_idx"]
+        row = self.data.iloc[idx]
+        
+        anchor = row["query_content"]
+        positive = row["positive_content"]
+        
+        # retrieve negative samples
+        problem_key = f"{row['problem_name']}_{row['problem_entry']}"
+        negatives = self.manipulated_problem_model_dict.get(problem_key, [])
+        
+        negative_strings = [Problem.__str__(neg) for neg in negatives]
+        
         output_dict = {
-            "anchor": self.data.iloc[idx]["query_content"],
-            "positive": self.data.iloc[idx]["positive_content"]
+            "anchor": anchor,
+            "positive": positive,
+            "negatives": negative_strings
         }
-
-        # extract 10 hard-negative samples
-        for range in (10):
-            # manipulate current problem file
-            pass
-
+        
         return output_dict
     
     def shuffle(self):
@@ -143,3 +156,27 @@ def generate_training_dataset(
     with open(os.path.join(save_dir, f"train_data_{file_id}.jsonl"), 'w') as f:
         f.write("\n".join(output_list))
     pbar.close()
+    
+if __name__ == "__main__":
+    
+    dir_path = "data/01_model_datasets/training/"
+
+    # Instantiate Dataset
+    dataset = TorchDataset(
+        negative_weights=0.5,
+        dir_path=dir_path,
+        expand_size=True,
+        estimate_batch_size=4
+    )
+    
+    print(f"Dataset size: {len(dataset)}")  # Expected: 1 (or more if multiple problems)
+    
+
+    print("Anchor:\n", dataset[0]["anchor"])
+    print("Positive:\n", dataset[0]["positive"])
+    print()
+    print("Negative samples:")
+    for i in dataset[0]["negatives"]:
+        print(i)
+
+

@@ -386,7 +386,55 @@ class Tyreworld(Domain):
 
 
 class Logistics(Domain):
-    pass
+    def convert_pddl_to_nl(self, dataset_dir: str):
+
+        problem_files = retrieve_problem_files(dataset_dir)
+
+        for problem_file in problem_files:
+            problem_dir = problem_file + "/positive.pddl"
+            task = parse_problem(problem_dir)
+            description = ""
+            airplanes, trucks, cities, locs, pkgs = [], [], [], [], []
+            
+            for i in task.objects:
+                if i.name.startswith("a"):
+                    airplanes.append(i)
+                elif i.name.startswith("t"):
+                    trucks.append(i)
+                elif i.name.startswith("c"):
+                    cities.append(i)
+                elif i.name.startswith("l"):
+                    locs.append(i)
+                elif i.name.startswith("p"):
+                    pkgs.append(i)
+            
+            description += f"You have {len(airplanes)} airplanes, {len(trucks)} trucks, {len(cities)} cities, {len(locs)} locations, and {len(pkgs)} packages. \n"
+            
+            truck_description = ""
+            airplane_description = ""
+            package_description = ""
+
+            for atom in task.init:
+                if type(atom) is Predicate and atom.name == "in-city":
+                    description += f"Location {atom.terms[0].name} is in city {atom.terms[1].name}. \n"
+                
+                if type(atom) is Predicate and atom.name == "at":
+                    if atom.terms[0].name.startswith("t"):
+                        truck_description += f"Truck {atom.terms[0].name} is at location {atom.terms[1]}. \n"
+                    elif atom.terms[0].name.startswith("a"):
+                        airplane_description += f"Airplane {atom.terms[0].name} is at location {atom.terms[1]}. \n"
+                    elif atom.terms[0].name.startswith("p"):
+                        package_description += f"Package {atom.terms[0].name} is at location {atom.terms[1]}. \n"
+                        
+            description += truck_description + package_description + airplane_description
+            description += "\nYour goal is for: \n"
+            
+            for atom in task.goal.operands:
+                if type(atom) is Predicate and atom.name == "at":
+                    description += f"Package {atom.terms[0].name} to be at location {atom.terms[1].name}. \n"
+                    
+            write_anchor_files(problem_file, description)
+            
 
 
 class Movie(Domain):
@@ -398,20 +446,26 @@ class MiniGrid(Domain):
 
 
 if __name__ == "__main__":
-    # b = Blocksworld()
-    # b.convert_pddl_to_nl("data/01_model_datasets/training/blocksworld")
+    b = Blocksworld()
+    b.convert_pddl_to_nl("data/01_model_datasets/training/blocksworld")
     
-    # b = Barman()
-    # b.convert_pddl_to_nl("data/01_model_datasets/training/barman")
+    b = Barman()
+    b.convert_pddl_to_nl("data/01_model_datasets/training/barman")
     
-    # f = Floortile()
-    # f.convert_pddl_to_nl("data/01_model_datasets/training/floortile")
+    f = Floortile()
+    f.convert_pddl_to_nl("data/01_model_datasets/training/floortile")
     
-    # g = Grippers()
-    # g.convert_pddl_to_nl("data/01_model_datasets/training/grippers")
+    g = Grippers()
+    g.convert_pddl_to_nl("data/01_model_datasets/training/grippers")
     
-    # l = Logistics()
-    # l.convert_pddl_to_nl("data/01_model_datasets/training/logistics")
+    l = Logistics()
+    l.convert_pddl_to_nl("data/01_model_datasets/training/logistics")
     
     t = Termes()
     t.convert_pddl_to_nl("data/01_model_datasets/training/termes")
+    
+    t = Tyreworld()
+    t.convert_pddl_to_nl("data/01_model_datasets/training/tyreworld")
+    
+    s = Storage()
+    s.convert_pddl_to_nl("data/01_model_datasets/training/storage")
