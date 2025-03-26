@@ -166,17 +166,17 @@ if __name__ == "__main__":
         negative_weights=0.5,
         dir_path=dir_path,
         expand_size=True,
-        estimate_batch_size=4
+        estimate_batch_size=10
     )
     
     print(f"Dataset size: {len(dataset)}")  # Expected: 1 (or more if multiple problems)
     
 
-    print("Anchor:\n", dataset[0]["anchor"])
-    print("Positive:\n", dataset[0]["positive"])
+    print("Anchor:\n", dataset[120]["anchor"])
+    print("Positive:\n", dataset[120]["positive"])
     print()
     print("Negative samples:")
-    for i in dataset[0]["negatives"]:
+    for i in dataset[120]["negatives"]:
         print(i)
 
 
