@@ -1,19 +1,13 @@
-import io
 import torch
 import os
-from glob import glob
 import json
+import re
 import pandas as pd
-from datetime import datetime
+from glob import glob
+from tqdm import tqdm
 from pathlib import Path
 from torch.utils.data import DataLoader
-from sentence_transformers import SentenceTransformer, losses, InputExample
-from sentence_transformers.evaluation import TripletEvaluator
-from sentence_transformers.trainer import SentenceTransformerTrainer
-from sentence_transformers.training_args import BatchSamplers, SentenceTransformerTrainingArguments
-from transformers import TrainerCallback
 from datasets import load_dataset
-from tqdm import tqdm
 from pddl.parser.problem import ProblemParser
 from pddl.core import Problem
 
@@ -26,16 +20,12 @@ This module sets up the training / testing dataset
 class TorchDataset(torch.utils.data.Dataset):
     def __init__(
         self,
-        negative_weights,
         dir_path,
         expand_size = False,
         estimate_batch_size = 32
     ):
-        self.negative_weights = negative_weights
-        self.estimate_batch_size = estimate_batch_size
+        self.estimate_batch_size = estimate_batch_size # number of problems to make from a single problem file
         self.expand_size = expand_size
-        
-        # /*positive.pddl
         
         # retrieve problem filepaths
         problem_filepaths = glob(os.path.join(dir_path, "*/p*/p*"), recursive=True)
@@ -44,11 +34,13 @@ class TorchDataset(torch.utils.data.Dataset):
         self.manipulated_problem_model_dict = dict() # key is f'{problem_name}_{problem_model}'
         
         for problem_filepath in tqdm(problem_filepaths, desc="Setting up dataset"):
-            
-            print(f"Processing: {problem_filepath}")
 
             anchor_path = f"{problem_filepath}/anchor.nl"
             positive_path = f"{problem_filepath}/positive.pddl"
+            
+            match = re.search(r"p\d+", os.path.basename(problem_filepath))  # Extracts "p01", "p123", etc.
+            if match:
+                problem_entry = match.group()
             
             with open(anchor_path, 'r') as f:
                 query_str = f.read()
@@ -58,24 +50,31 @@ class TorchDataset(torch.utils.data.Dataset):
                 problem_str = f.read()
             problem_model = ProblemParser()(problem_str)
             problem_name = problem_model.name
-
-            problem_entry = "" # FIX THIS - retrieve path number
             query_content = query_str
             positive_content = problem_str
 
-            # TO DO - create manipulate problem file function
-            manipulated_problem_list, _ = get_manipulated_problem_list(problem_model, self.estimate_batch_size, 3)
+            manipulated_problem_list, _ = get_manipulated_problem_list(problem_model, self.estimate_batch_size, 4)
             
-            self.manipulated_problem_model_dict[f"{problem_name}_{problem_entry}"] = manipulated_problem_list
+            assert len(manipulated_problem_list) == 1000, f"Expected 1000 problems per problem file, got {len(manipulated_problem_list)}"
             
-            # problem_name: domain of problem
-            # problem_entry: specific problem entry
-            self.data.loc[len(self.data)] = {
-                "problem_name": problem_name,
-                "problem_entry": problem_entry,
-                "query_content": query_content,         # anchor
-                "positive_content": positive_content    # positive sample
-            }
+            # split into 100 groups, each with 10 manipulated problems
+            num_entries = 100       # number of data entries
+            problems_per_entry = 10 # each data entry gets 10 problems
+            
+            for i in range(num_entries):
+                start_idx = i * problems_per_entry
+                end_idx = start_idx + problems_per_entry
+                
+                negative_samples = manipulated_problem_list[start_idx:end_idx] # get 10 problems
+            
+                self.manipulated_problem_model_dict[f"{problem_name}_{problem_entry}_{i}"] = negative_samples
+
+                self.data.loc[len(self.data)] = {
+                    "problem_name": problem_name,
+                    "problem_entry": f"{problem_entry}_{i}",
+                    "query_content": query_content,         # anchor
+                    "positive_content": positive_content    # positive sample
+                }
 
     def __len__(self):
         return len(self.data)
@@ -120,25 +119,29 @@ def create_test_dataset():
     pass
     
     
-def generate_training_dataset(
-    train_neg_weights, total_num_examples = 2.0e5, chunksize=10000
-    ):
+def generate_dataset(data_path, save_path, total_num_examples = 1.0e5, chunksize=5000):
     """
     Generates training dataset by sampling from a TorchDataset object and saving it 
     to JSONL files
     """
     
-    data_dir = os.path.join(os.environ['WORKING_DIR'], "data/01_raw")
-    train_dataset = TorchDataset(neg_weights=train_neg_weights, dir_path=data_dir)
-    save_dir = os.path.join(os.environ['WORKING_DIR'], "data/02_intermediate")
+    # data_path should be something like "data/01_raw_dataset/training/"
+    # save_path should be something like "data/02_intermediate_dataset/training/"
+    # data_dir = os.path.join(os.environ['WORKING_DIR'], data_path)
+    
+    data_dir = data_path
+    train_dataset = TorchDataset(dir_path=data_dir, expand_size=False, estimate_batch_size=1000)
+    train_dataset_length = len(train_dataset)
+        
+    save_dir = save_path
     Path(save_dir).mkdir(parents=True, exist_ok=True)
     
     file_id = 0
     num_count = 0
     output_list = []
-    pbar = tqdm(total=total_num_examples, desc="Generating training dataset")
+    pbar = tqdm(total=train_dataset_length, desc="Generating training dataset")
     
-    while num_count < total_num_examples:
+    while num_count < train_dataset_length:
         for i in range(len(train_dataset)):
             output_list.append(json.dumps(train_dataset[i]))
             num_count += 1
@@ -157,26 +160,8 @@ def generate_training_dataset(
         f.write("\n".join(output_list))
     pbar.close()
     
+    
 if __name__ == "__main__":
-    
-    dir_path = "data/01_model_datasets/training/"
-
-    # Instantiate Dataset
-    dataset = TorchDataset(
-        negative_weights=0.5,
-        dir_path=dir_path,
-        expand_size=True,
-        estimate_batch_size=10
-    )
-    
-    print(f"Dataset size: {len(dataset)}")  # Expected: 1 (or more if multiple problems)
-    
-
-    print("Anchor:\n", dataset[120]["anchor"])
-    print("Positive:\n", dataset[120]["positive"])
-    print()
-    print("Negative samples:")
-    for i in dataset[120]["negatives"]:
-        print(i)
+    generate_dataset(data_path="data/01_raw_dataset/training/", save_path="data/02_intermediate_dataset/training/")
 
 

@@ -447,25 +447,25 @@ class MiniGrid(Domain):
 
 if __name__ == "__main__":
     b = Blocksworld()
-    b.convert_pddl_to_nl("data/01_model_datasets/training/blocksworld")
+    b.convert_pddl_to_nl("data/01_raw_dataset/training/blocksworld")
     
     b = Barman()
-    b.convert_pddl_to_nl("data/01_model_datasets/training/barman")
+    b.convert_pddl_to_nl("data/01_raw_dataset/training/barman")
     
     f = Floortile()
-    f.convert_pddl_to_nl("data/01_model_datasets/training/floortile")
+    f.convert_pddl_to_nl("data/01_raw_dataset/training/floortile")
     
     g = Grippers()
-    g.convert_pddl_to_nl("data/01_model_datasets/training/grippers")
+    g.convert_pddl_to_nl("data/01_raw_dataset/training/grippers")
     
     l = Logistics()
-    l.convert_pddl_to_nl("data/01_model_datasets/training/logistics")
+    l.convert_pddl_to_nl("data/01_raw_dataset/training/logistics")
     
     t = Termes()
-    t.convert_pddl_to_nl("data/01_model_datasets/training/termes")
+    t.convert_pddl_to_nl("data/01_raw_dataset/training/termes")
     
     t = Tyreworld()
-    t.convert_pddl_to_nl("data/01_model_datasets/training/tyreworld")
+    t.convert_pddl_to_nl("data/01_raw_dataset/training/tyreworld")
     
     s = Storage()
-    s.convert_pddl_to_nl("data/01_model_datasets/training/storage")
+    s.convert_pddl_to_nl("data/01_raw_dataset/training/storage")

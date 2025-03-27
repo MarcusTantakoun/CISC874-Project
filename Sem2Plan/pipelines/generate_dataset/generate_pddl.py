@@ -453,7 +453,7 @@ class MiniGrid(Domain):
     
 
 
-if __name__ == "__main__":
+# if __name__ == "__main__":
     
     # # BARMAN
     # parser = argparse.ArgumentParser(description="Barman Problem Generator")
@@ -466,7 +466,7 @@ if __name__ == "__main__":
     # args = parser.parse_args()
 
     # b = Barman()
-    # b.generate_problem(dataset_dir="data/01_model_datasets/training/barman", args=args)
+    # b.generate_problem(dataset_dir="data/01_raw_dataset/training/barman", args=args)
     
     # # BLOCKSWORLD
     # parser = argparse.ArgumentParser(description="Blocksworld Problem Generator")
@@ -477,7 +477,7 @@ if __name__ == "__main__":
     # args = parser.parse_args()
 
     # b = Blocksworld()
-    # b.generate_problem(dataset_dir="data/01_model_datasets/training/blocksworld", args=args)
+    # b.generate_problem(dataset_dir="data/01_raw_dataset/training/blocksworld", args=args)
         
     # # FLOORTILE
     # parser = argparse.ArgumentParser(description="Floortile Problem Generator")
@@ -490,7 +490,7 @@ if __name__ == "__main__":
     # args = parser.parse_args()
 
     # f = Floortile()
-    # f.generate_problem(dataset_dir="data/01_model_datasets/training/floortile", args=args)
+    # f.generate_problem(dataset_dir="data/01_raw_dataset/training/floortile", args=args)
     
     # # GRIPPERS
     # parser = argparse.ArgumentParser(description="Grippers Problem Generator")
@@ -503,7 +503,7 @@ if __name__ == "__main__":
     # args = parser.parse_args()
 
     # f = Grippers()
-    # f.generate_problem(dataset_dir="data/01_model_datasets/training/grippers", args=args)
+    # f.generate_problem(dataset_dir="data/01_raw_dataset/training/grippers", args=args)
     
     # # LOGISTICS
     # parser = argparse.ArgumentParser(description="Logistics Problem Generator")
@@ -517,21 +517,7 @@ if __name__ == "__main__":
     # args = parser.parse_args()
     
     # l = Logistics()
-    # l.generate_problem(dataset_dir="data/01_model_datasets/training/logistics", args=args)
-    
-    # TERMES
-    parser = argparse.ArgumentParser(description="Termes Problem Generator")
-    parser.add_argument("--name", type=str, default="termes")
-    parser.add_argument("--size_x", type=int, default=4)
-    parser.add_argument("--size_y", type=int, default=3)
-    parser.add_argument("--height", type=int, default=3)
-    parser.add_argument("--towers", type=int, default=4)
-    parser.add_argument("--seed", type=int, default=123)
-    parser.add_argument("--max_iterations", type=int, default=50)
-    args = parser.parse_args()
-
-    f = Termes()
-    f.generate_problem(dataset_dir="data/01_model_datasets/training/termes", args=args)
+    # l.generate_problem(dataset_dir="data/01_raw_dataset/training/logistics", args=args)
     
     # # STORAGE
     # parser = argparse.ArgumentParser(description="Storage Problem Generator")
@@ -545,4 +531,18 @@ if __name__ == "__main__":
     # args = parser.parse_args()
 
     # s = Storage()
-    # s.generate_problem(dataset_dir="data/01_model_datasets/training/storage", args=args)
+    # s.generate_problem(dataset_dir="data/01_raw_dataset/training/storage", args=args)
+    
+    # # TERMES
+    # parser = argparse.ArgumentParser(description="Termes Problem Generator")
+    # parser.add_argument("--name", type=str, default="termes")
+    # parser.add_argument("--size_x", type=int, default=4)
+    # parser.add_argument("--size_y", type=int, default=3)
+    # parser.add_argument("--height", type=int, default=3)
+    # parser.add_argument("--towers", type=int, default=4)
+    # parser.add_argument("--seed", type=int, default=123)
+    # parser.add_argument("--max_iterations", type=int, default=50)
+    # args = parser.parse_args()
+
+    # f = Termes()
+    # f.generate_problem(dataset_dir="data/01_raw_dataset/training/termes", args=args)
