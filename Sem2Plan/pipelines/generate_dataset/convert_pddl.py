@@ -359,32 +359,6 @@ class Termes(Domain):
             write_anchor_files(problem_file, description)
 
 
-class Tyreworld(Domain):
-    def convert_pddl_to_nl(self, dataset_dir: str):
-
-        problem_files = retrieve_problem_files(dataset_dir)
-
-        for problem_file in problem_files:
-            problem_dir = problem_file + "/positive.pddl"
-            task = parse_problem(problem_dir)
-            description = ""
-
-            count = count_types(task)
-            wheel_count = int(count['wheel']/2)
-            
-            description += f"You have a jack, a pump, a wrench, a boot, {count['hub']} hubs, {count['nut']} nuts, {wheel_count} flat tyres, and {wheel_count} intact tyres. \n"
-            description += f"The jack, pump, wrench, and intact tyres are in the boot. \n"
-            description += f"The boot is unlocked but is closed. \n"
-            description += f"The intact tyres are not inflated. \n"
-            description += f"The flat tyres are on the hubs. \n"
-            description += f"The hubs are on the ground. \n"
-            description += f"The nuts are tight on the hubs. \n"
-            description += f"The hubs are fastened. \n"                     
-            description += f"Your goal is to replace flat tyres with intact tyres on the hubs. Intact tyres should be inflated. The nuts should be tight on the hubs. The flat tyres, wrench, jack, and pump should be in the boot. The boot should be closed. \n"
-
-            write_anchor_files(problem_file, description)
-
-
 class Logistics(Domain):
     def convert_pddl_to_nl(self, dataset_dir: str):
 
@@ -434,7 +408,10 @@ class Logistics(Domain):
                     description += f"Package {atom.terms[0].name} to be at location {atom.terms[1].name}. \n"
                     
             write_anchor_files(problem_file, description)
+
             
+class TidyBot(Domain):
+    pass
 
 
 class Movie(Domain):
@@ -464,8 +441,7 @@ if __name__ == "__main__":
     t = Termes()
     t.convert_pddl_to_nl("data/01_raw_dataset/training/termes")
     
-    t = Tyreworld()
-    t.convert_pddl_to_nl("data/01_raw_dataset/training/tyreworld")
-    
     s = Storage()
     s.convert_pddl_to_nl("data/01_raw_dataset/training/storage")
+    
+    # ADD TidyBot domain

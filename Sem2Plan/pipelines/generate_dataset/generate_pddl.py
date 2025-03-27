@@ -386,42 +386,8 @@ class Logistics(Domain):
                 break  # Stop if reaching limit
 
 
-class Tyreworld(Domain):
-    def generate_problem(self, dataset_dir: str, args):
-        num_tyres = args.tyres
-        max_iters = args.max_iterations
-        
-        seen_problems = set()  # Store unique problems
-        iteration = 0
-        
-        problem_dir = os.path.join(dataset_dir, "problems")
-        os.makedirs(problem_dir, exist_ok=True)
-        
-        while len(seen_problems) < max_iters:
-
-            command = ['pddl-generators/tyreworld/tyreworld', "-n", str(num_tyres)]
-
-            try:
-                result = subprocess.run(command, check=True, text=True, capture_output=True)
-                desc = result.stdout  # Capture the standard output as a string
-                print(desc)
-            except subprocess.CalledProcessError as e:
-                print(f"Error running the command: {e}")
-                
-            problem_hash = hashlib.md5(desc.encode()).hexdigest()  # Generate a unique hash for the problem
-            
-            if problem_hash not in seen_problems:
-                seen_problems.add(problem_hash)
-                problem_path = write_file(problem_dir, iteration, desc)
-                parsed_problem = parse_problem_file(problem_path)
-                
-                with open(problem_path, 'w') as f:
-                    f.write(parsed_problem)
-                    
-                iteration += 1
-
-            if iteration >= max_iters:
-                break  # Stop if reaching limit
+class TidyBot(Domain):
+    pass
 
 
 class Movie(Domain):
