@@ -517,7 +517,7 @@ class MiniGrid(Domain):
     
 
 
-if __name__ == "__main__":
+# if __name__ == "__main__":
     
     # # BARMAN
     # parser = argparse.ArgumentParser(description="Barman Problem Generator")
@@ -611,20 +611,20 @@ if __name__ == "__main__":
     # f = Termes()
     # f.generate_problem(dataset_dir="data/01_raw_dataset/training/termes", args=args)
 
-    # ROVERS
-    parser = argparse.ArgumentParser(description="Rovers Problem Generator")
-    parser.add_argument("--name", type=str, default="rovers")
-    parser.add_argument("--rovers", type=int, default=2)
-    parser.add_argument("--waypoints", type=int, default=5)
-    parser.add_argument("--objectives", type=int, default=2)
-    parser.add_argument("--cameras", type=int, default=2)
-    parser.add_argument("--goals", type=int, default=2)
-    parser.add_argument("--seed", type=int, default=1000)
-    parser.add_argument("--max_iterations", type=int, default=100)
-    args = parser.parse_args()
+    # # ROVERS
+    # parser = argparse.ArgumentParser(description="Rovers Problem Generator")
+    # parser.add_argument("--name", type=str, default="rovers")
+    # parser.add_argument("--rovers", type=int, default=2)
+    # parser.add_argument("--waypoints", type=int, default=5)
+    # parser.add_argument("--objectives", type=int, default=2)
+    # parser.add_argument("--cameras", type=int, default=2)
+    # parser.add_argument("--goals", type=int, default=2)
+    # parser.add_argument("--seed", type=int, default=1000)
+    # parser.add_argument("--max_iterations", type=int, default=100)
+    # args = parser.parse_args()
 
-    r = Rovers()
-    r.generate_problem(dataset_dir="data/01_raw_dataset/training/rovers", args=args)
+    # r = Rovers()
+    # r.generate_problem(dataset_dir="data/01_raw_dataset/training/rovers", args=args)
 
     # # HIKING
     # parser = argparse.ArgumentParser(description="Hiking Problem Generator")

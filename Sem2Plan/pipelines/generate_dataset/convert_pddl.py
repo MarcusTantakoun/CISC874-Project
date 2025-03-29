@@ -650,7 +650,7 @@ class MiniGrid(Domain):
             write_anchor_files(problem_file, description)
 
 
-if __name__ == "__main__":
+# if __name__ == "__main__":
     # b = Blocksworld()
     # b.convert_pddl_to_nl("data/01_raw_dataset/training/blocksworld")
     
@@ -679,6 +679,6 @@ if __name__ == "__main__":
     # h = Hiking()
     # h.convert_pddl_to_nl("data/01_raw_dataset/testing/hiking")
     
-    m = MiniGrid()
-    m.convert_pddl_to_nl("data/01_raw_dataset/testing/minigrid")
+    # m = MiniGrid()
+    # m.convert_pddl_to_nl("data/01_raw_dataset/testing/minigrid")
     
