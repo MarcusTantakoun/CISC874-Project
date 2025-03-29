@@ -506,11 +506,11 @@ class Rovers(Domain):
                     elif goal.name == "communicated_image_data":
                         description += f"Communicated image data should be at {goal.terms[0].name} with {goal.terms[1].name} resolution. \n"
             else:
-                if goal == "communicated_rock_data":
+                if task.goal.name == "communicated_rock_data":
                     description += f"Communicated rock data should be at {goal.terms[0].name}. \n"
-                elif goal == "communicated_soil_data":
+                elif task.goal.name == "communicated_soil_data":
                     description += f"Communicated soil data should be at {goal.terms[0].name}. \n"
-                elif goal == "communicated_image_data":
+                elif task.goal.name == "communicated_image_data":
                     description += f"Communicated image data should be at {goal.terms[0].name} with {goal.terms[1].name} resolution. \n"
                 
             write_anchor_files(problem_file, description)
@@ -581,7 +581,7 @@ class Hiking(Domain):
                     if goal.name == "walked":
                         description += f"Couple {goal.terms[0].name} walked to place {goal.terms[1].name}. \n"
             else:
-                if goal == "walked":
+                if goals[0] == "walked":
                     description += f"Couple {goal.terms[0].name} walked to place {goal.terms[1].name}. \n"
                 
             write_anchor_files(problem_file, description)
@@ -598,64 +598,54 @@ class MiniGrid(Domain):
             task = parse_problem(problem_dir)
             description = ""
             
-            keys, calls, shapes = [], [], []
+            keys, cells, shapes = [], [], []
             
             for i in task.objects:
-                if i.name.startswith("a"):
-                    airplanes.append(i)
-                elif i.name.startswith("t"):
-                    trucks.append(i)
-                elif i.name.startswith("c"):
-                    cities.append(i)
-                elif i.name.startswith("l"):
-                    locs.append(i)
+                if i.name.startswith("key"):
+                    keys.append(i)
                 elif i.name.startswith("p"):
-                    pkgs.append(i)
+                    cells.append(i)
+                elif i.name.startswith("shape"):
+                    shapes.append(i)
             
-            description += f"You have {len(airplanes)} airplanes, {len(trucks)} trucks, {len(cities)} cities, {len(locs)} locations, and {len(pkgs)} packages. \n"
+            description += f"You have {len(keys)} keys, {len(cells)} places, and {len(shapes)} shapes. \n"
+            description += f"Inititally, the robot arm is empty and you have the following: \n"
             
-                    
-            
-            description += f"Inititally, you have the following: \n"
-            
-            at_car_desc = ""
-            at_person_desc = ""
-            at_tent_desc = ""
-            down_desc = ""
-            up_desc = ""
-            next_desc = ""
-            partners_desc = ""
-            walked_desc = ""
+            at_robot_desc = ""
+            at_desc = ""
+            conn_desc = ""
+            key_shape_desc = ""
+            lock_shape_desc = ""
+            locked_desc = ""
+            open_desc = ""
             
             for atom in task.init:
-                if "at_car" == atom.name:
-                    at_car_desc += f"Car {atom.terms[0].name} is at place {atom.terms[1].name}. \n"
-                elif "at_person" == atom.name:
-                    at_person_desc += f"Person {atom.terms[0].name} is at place {atom.terms[1].name}. \n"
-                elif "at_tent" == atom.name:
-                    at_tent_desc += f"Tent {atom.terms[0].name} is at place {atom.terms[1].name}. \n"
-                elif "down" == atom.name:
-                    down_desc += f"Tent {atom.terms[0].name} is down. \n"
-                elif "up" == atom.name:
-                    up_desc += f"Tent {atom.terms[0].name} is up. \n"
-                elif "next" == atom.name:
-                    next_desc += f"Place {atom.terms[0].name} is next to place {atom.terms[1].name}. \n"
-                elif "partners" == atom.name:
-                    partners_desc += f"Couple {atom.terms[0].name} consists of partners {atom.terms[1].name} and {atom.terms[2].name}. \n"
-                elif "walked" == atom.name:
-                    walked_desc += f"Couple {atom.terms[0].name} walked to place {atom.terms[1].name}. \n"
+                if "at-robot" == atom.name:
+                    at_robot_desc += f"Robot is at place {atom.terms[0].name}. \n"
+                elif "at" == atom.name:
+                    at_desc += f"Key {atom.terms[0].name} is at place {atom.terms[1].name}. \n"
+                elif "conn" == atom.name:
+                    conn_desc += f"Place {atom.terms[0].name} is connected to place {atom.terms[1].name}. \n"
+                elif "key-shape" == atom.name:
+                    key_shape_desc += f"Key {atom.terms[0].name} is shaped {atom.terms[1].name}. \n"
+                elif "lock-shape" == atom.name:
+                    lock_shape_desc += f"Lock {atom.terms[0].name} is shaped {atom.terms[1].name}. \n"
+                elif "locked" == atom.name:
+                    locked_desc += f"Place {atom.terms[0].name} is locked. \n"
+                elif "open" == atom.name:
+                    open_desc += f"Place {atom.terms[0].name} is open. \n"
             
-            description += at_car_desc + at_person_desc + at_tent_desc + down_desc + up_desc + next_desc + partners_desc + walked_desc
+            description += at_robot_desc + at_desc + conn_desc + key_shape_desc + lock_shape_desc + locked_desc + open_desc
             description += "\nThe goal is the following: \n"
             
             goals = get_goals(task)
             if len(goals) > 1:
                 for goal in goals:
-                    if goal.name == "walked":
-                        description += f"Couple {goal.terms[0].name} walked to place {goal.terms[1].name}. \n"
+                    if goal.name == "at-robot":
+                        description += f"Robot should be at place {goal.terms[0].name}. \n"
             else:
-                if goal == "walked":
-                    description += f"Couple {goal.terms[0].name} walked to place {goal.terms[1].name}. \n"
+                if task.goal.name == "at-robot":
+                    description += f"Robot should be at place {task.goal.terms[0].name}. \n"
                 
             write_anchor_files(problem_file, description)
 
@@ -685,10 +675,10 @@ if __name__ == "__main__":
     # r = Rovers()
     # r.convert_pddl_to_nl("data/01_raw_dataset/training/rovers")
     
-    # TESTING DATASET
-    h = Hiking()
-    h.convert_pddl_to_nl("data/01_raw_dataset/testing/hiking")
+    # # TESTING DATASET
+    # h = Hiking()
+    # h.convert_pddl_to_nl("data/01_raw_dataset/testing/hiking")
     
-    # m = MiniGrid()
-    # m.convert_pddl_to_nl("data/01_raw_dataset/testing/minigrid")
+    m = MiniGrid()
+    m.convert_pddl_to_nl("data/01_raw_dataset/testing/minigrid")
     
