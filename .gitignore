@@ -172,3 +172,6 @@ cython_debug/
 
 # PyPI configuration file
 .pypirc
+
+data/02_intermediate_dataset/training
+data/02_intermediate_dataset/testing

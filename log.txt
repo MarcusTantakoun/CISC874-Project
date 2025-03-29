@@ -1,8 +1,0 @@
-2025-03-29 09:48:14,165 [INFO] [main:298] Using log file 'log.txt'
-2025-03-29 09:48:14,165 [INFO] [main:299] call=|pddl-generators/minigrid/mini_grid.py --seed 802 ./floorplans/4room2.fpl 0|
-2025-03-29 09:49:47,262 [INFO] [main:298] Using log file 'log.txt'
-2025-03-29 09:49:47,263 [INFO] [main:299] call=|pddl-generators/minigrid/mini_grid.py --seed 288 pddl-generators/minigrid/floorplans/4room2.fpl 0|
-2025-03-29 09:49:47,263 [INFO] [__init__:103] Floorplan: ncells=19, locks={(0, 2), (2, 0), (3, 2)}
-2025-03-29 09:49:47,263 [INFO] [__init__:129] Locks: nlocks=3, nshapes=2, shape_map={(0, 2): 1, (2, 0): 1, (3, 2): 0}
-2025-03-29 09:49:47,263 [INFO] [__init__:145] Path: init=(4, 0), goal=(1, 1), path=[(4, 0), (3, 0), (2, 0), (1, 0), (1, 1)], locks=[(2, 0)]
-2025-03-29 09:49:47,263 [INFO] [main:315] grid_4room2_fpl_s0_seed288_n0.pddl written!
