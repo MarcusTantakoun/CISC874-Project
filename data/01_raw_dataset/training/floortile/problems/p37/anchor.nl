@@ -6,10 +6,10 @@ tile_3-1 tile_3-2 tile_3-3
 tile_4-1 tile_4-2 tile_4-3 
 tile_5-1 tile_5-2 tile_5-3 
 You have 2 robots. 
-Each robot can paint in color white or black. 
+Each robot can paint in color black or white. 
 robot1 start with the color white. 
 robot2 start with the color black. 
-robot2 is at tile_2-3. 
-robot1 is at tile_2-2. 
+robot1 is at tile_1-2. 
+robot2 is at tile_1-3. 
 Your goal is to paint the grid in the following pattern: 
 tile_1-1 is white; tile_1-2 is black; tile_1-3 is white; tile_2-1 is black; tile_2-2 is white; tile_2-3 is black; tile_3-1 is white; tile_3-2 is black; tile_3-3 is white; tile_4-1 is black; tile_4-2 is white; tile_4-3 is black; tile_5-1 is white; tile_5-2 is black; tile_5-3 is white. 

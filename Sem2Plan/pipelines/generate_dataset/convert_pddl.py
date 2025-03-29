@@ -42,14 +42,17 @@ def count_types(task):
 
 
 def get_goals(task):
-    if len(task.goal.operands) > 0:
+    if hasattr(task.goal, 'operands') and len(task.goal.operands) > 0:
         goals = task.goal.operands
     else:
-        goals = [task.goals]
+        goals = [getattr(task, 'goals', [])]  # Fallback to task.goals or empty list
 
     return goals
 
 
+
+
+""" TRAINING DOMAINS """
 class Domain(ABC):
 
     @abstractmethod
@@ -410,38 +413,282 @@ class Logistics(Domain):
             write_anchor_files(problem_file, description)
 
             
-class TidyBot(Domain):
-    pass
+class Rovers(Domain):
+    """This function is heavily inefficient. I was too lazy to switch things around :)"""
+    def convert_pddl_to_nl(self, dataset_dir: str):
+
+        problem_files = retrieve_problem_files(dataset_dir)
+
+        for problem_file in problem_files:
+            problem_dir = problem_file + "/positive.pddl"
+            task = parse_problem(problem_dir)
+            description = ""
+            
+            count = count_types(task)
+            count['Camera'] , count['Rover'], count['Waypoint'], count['Objective'] = 0, 0, 0, 0
+            camera_names, rover_names, waypoint_names, objective_names = [], [], [], []
+
+            for obj in task.objects:
+                if "Camera" in obj.type_tag:
+                    count['Camera'] += 1
+                    camera_names.append(obj.name)
+                if "Rover" in obj.type_tag:
+                    count['Rover'] += 1
+                    rover_names.append(obj.name)
+                if "Waypoint" in obj.type_tag:
+                    count['Waypoint'] += 1
+                    waypoint_names.append(obj.name)
+                if "Objective" in obj.type_tag:
+                    count['Objective'] += 1
+                    objective_names.append(obj.name)
+                    
+            description += f"You have {count['Camera']} cameras, {count['Rover']} rovers, {count['Waypoint']} waypoints, and {count['Objective']} objectives. \n"
+            description += f"You also have a general, 2 modes of high and low resolution, and 2 rover stores. \n"
+            description += f"Inititally, the general channel is free and you have the following: \n"
+            
+            for atom in task.init:
+                if "visible" == atom.name:
+                    description += f"Waypoint {atom.terms[0].name} is visible to waypoint {atom.terms[1].name}. \n"
+            
+            for atom in task.init:
+                if "at_soil_sample" == atom.name:
+                    description += f"Soil sample is at {atom.terms[0].name}. \n"
+                elif "at_rock_sample" == atom.name:
+                    description += f"Rock sample is at {atom.terms[0].name}. \n"
+                elif "at_lander" == atom.name:
+                    description += f"The general is at the lander at {atom.terms[1].name}. \n"
+
+            for atom in task.init:
+                if "at" == atom.name:
+                    description += f"Rover {atom.terms[0].name} is at {atom.terms[1].name}. \n"
+                    
+            for atom in task.init:
+                if "available" == atom.name:
+                    description += f"Rover {atom.terms[0].name} is available. \n"
+                if "store_of" == atom.name:
+                    description += f"{atom.terms[0].name} is the store of {atom.terms[1].name}. \n"
+                if "empty" == atom.name:
+                    description += f"{atom.terms[0].name} is empty. \n"
+                
+            for atom in task.init:
+                if "equipped_for_rock_analysis" == atom.name:
+                    description += f"Rover {atom.terms[0].name} is equipped for rock analysis. \n"
+                elif "equipped_for_soil_analysis" == atom.name:
+                    description += f"Rover {atom.terms[0].name} is equipped for soil analysis. \n"
+                elif "equipped_for_imaging" == atom.name:
+                    description += f"Rover {atom.terms[0].name} is equipped for imaging. \n"
+                    
+            for atom in task.init:
+                if "can_traverse" == atom.name:
+                    description += f"Rover {atom.terms[0].name} can traverse from {atom.terms[1].name} to {atom.terms[2].name}. \n"
+                    
+            for atom in task.init:
+                if "on_board" == atom.name:
+                    description += f"Camera {atom.terms[0].name} is on board with rover {atom.terms[1].name}. \n"
+                if "calibration_target" == atom.name:
+                    description += f"Camera {atom.terms[0].name}'s calibration target is objective {atom.terms[1].name}. \n"
+                if "supports" == atom.name:
+                    description += f"Camera {atom.terms[0].name} supports {atom.terms[1].name}. \n"
+                    
+            for atom in task.init:
+                if "visible_from" == atom.name:
+                    description += f"Objective {atom.terms[0].name} is visible from {atom.terms[1].name}. \n"
+            
+            description += "\nYour goal is the following: \n"
+            
+            goals = get_goals(task)
+            if len(goals) > 1:
+                for goal in goals:
+                    if goal.name == "communicated_rock_data":
+                        description += f"Communicated rock data should be at {goal.terms[0].name}. \n"
+                    elif goal.name == "communicated_soil_data":
+                        description += f"Communicated soil data should be at {goal.terms[0].name}. \n"
+                    elif goal.name == "communicated_image_data":
+                        description += f"Communicated image data should be at {goal.terms[0].name} with {goal.terms[1].name} resolution. \n"
+            else:
+                if goal == "communicated_rock_data":
+                    description += f"Communicated rock data should be at {goal.terms[0].name}. \n"
+                elif goal == "communicated_soil_data":
+                    description += f"Communicated soil data should be at {goal.terms[0].name}. \n"
+                elif goal == "communicated_image_data":
+                    description += f"Communicated image data should be at {goal.terms[0].name} with {goal.terms[1].name} resolution. \n"
+                
+            write_anchor_files(problem_file, description)
 
 
-class Movie(Domain):
-    pass
+""" TESTING DOMAINS """
+class Hiking(Domain):
+    def convert_pddl_to_nl(self, dataset_dir: str):
+
+        problem_files = retrieve_problem_files(dataset_dir)
+
+        for problem_file in problem_files:
+            problem_dir = problem_file + "/positive.pddl"
+            task = parse_problem(problem_dir)
+            description = ""
+            
+            count = count_types(task)
+            count['car'] , count['couple'], count['person'], count['place'], count['tent'] = 0, 0, 0, 0, 0
+
+            for obj in task.objects:
+                if "car" in obj.type_tag:
+                    count['car'] += 1
+                if "couple" in obj.type_tag:
+                    count['couple'] += 1
+                if "person" in obj.type_tag:
+                    count['person'] += 1
+                if "place" in obj.type_tag:
+                    count['place'] += 1
+                if "tent" in obj.type_tag:
+                    count['tent'] += 1
+                    
+            description += f"You have {count['car']} cars, {count['couple']} couples, and thus {count['person']} people ({count['person']//2} guys and {count['person']//2} girls), {count['place']} places, and {count['tent']} tents. \n"
+            description += f"Inititally, you have the following: \n"
+            
+            at_car_desc = ""
+            at_person_desc = ""
+            at_tent_desc = ""
+            down_desc = ""
+            up_desc = ""
+            next_desc = ""
+            partners_desc = ""
+            walked_desc = ""
+            
+            for atom in task.init:
+                if "at_car" == atom.name:
+                    at_car_desc += f"Car {atom.terms[0].name} is at place {atom.terms[1].name}. \n"
+                elif "at_person" == atom.name:
+                    at_person_desc += f"Person {atom.terms[0].name} is at place {atom.terms[1].name}. \n"
+                elif "at_tent" == atom.name:
+                    at_tent_desc += f"Tent {atom.terms[0].name} is at place {atom.terms[1].name}. \n"
+                elif "down" == atom.name:
+                    down_desc += f"Tent {atom.terms[0].name} is down. \n"
+                elif "up" == atom.name:
+                    up_desc += f"Tent {atom.terms[0].name} is up. \n"
+                elif "next" == atom.name:
+                    next_desc += f"Place {atom.terms[0].name} is next to place {atom.terms[1].name}. \n"
+                elif "partners" == atom.name:
+                    partners_desc += f"Couple {atom.terms[0].name} consists of partners {atom.terms[1].name} and {atom.terms[2].name}. \n"
+                elif "walked" == atom.name:
+                    walked_desc += f"Couple {atom.terms[0].name} walked to place {atom.terms[1].name}. \n"
+            
+            description += at_car_desc + at_person_desc + at_tent_desc + down_desc + up_desc + next_desc + partners_desc + walked_desc
+            description += "\nThe goal is the following: \n"
+            
+            goals = get_goals(task)
+            if len(goals) > 1:
+                for goal in goals:
+                    if goal.name == "walked":
+                        description += f"Couple {goal.terms[0].name} walked to place {goal.terms[1].name}. \n"
+            else:
+                if goal == "walked":
+                    description += f"Couple {goal.terms[0].name} walked to place {goal.terms[1].name}. \n"
+                
+            write_anchor_files(problem_file, description)
+                    
 
 
 class MiniGrid(Domain):
-    pass
+    def convert_pddl_to_nl(self, dataset_dir: str):
+
+        problem_files = retrieve_problem_files(dataset_dir)
+
+        for problem_file in problem_files:
+            problem_dir = problem_file + "/positive.pddl"
+            task = parse_problem(problem_dir)
+            description = ""
+            
+            keys, calls, shapes = [], [], []
+            
+            for i in task.objects:
+                if i.name.startswith("a"):
+                    airplanes.append(i)
+                elif i.name.startswith("t"):
+                    trucks.append(i)
+                elif i.name.startswith("c"):
+                    cities.append(i)
+                elif i.name.startswith("l"):
+                    locs.append(i)
+                elif i.name.startswith("p"):
+                    pkgs.append(i)
+            
+            description += f"You have {len(airplanes)} airplanes, {len(trucks)} trucks, {len(cities)} cities, {len(locs)} locations, and {len(pkgs)} packages. \n"
+            
+                    
+            
+            description += f"Inititally, you have the following: \n"
+            
+            at_car_desc = ""
+            at_person_desc = ""
+            at_tent_desc = ""
+            down_desc = ""
+            up_desc = ""
+            next_desc = ""
+            partners_desc = ""
+            walked_desc = ""
+            
+            for atom in task.init:
+                if "at_car" == atom.name:
+                    at_car_desc += f"Car {atom.terms[0].name} is at place {atom.terms[1].name}. \n"
+                elif "at_person" == atom.name:
+                    at_person_desc += f"Person {atom.terms[0].name} is at place {atom.terms[1].name}. \n"
+                elif "at_tent" == atom.name:
+                    at_tent_desc += f"Tent {atom.terms[0].name} is at place {atom.terms[1].name}. \n"
+                elif "down" == atom.name:
+                    down_desc += f"Tent {atom.terms[0].name} is down. \n"
+                elif "up" == atom.name:
+                    up_desc += f"Tent {atom.terms[0].name} is up. \n"
+                elif "next" == atom.name:
+                    next_desc += f"Place {atom.terms[0].name} is next to place {atom.terms[1].name}. \n"
+                elif "partners" == atom.name:
+                    partners_desc += f"Couple {atom.terms[0].name} consists of partners {atom.terms[1].name} and {atom.terms[2].name}. \n"
+                elif "walked" == atom.name:
+                    walked_desc += f"Couple {atom.terms[0].name} walked to place {atom.terms[1].name}. \n"
+            
+            description += at_car_desc + at_person_desc + at_tent_desc + down_desc + up_desc + next_desc + partners_desc + walked_desc
+            description += "\nThe goal is the following: \n"
+            
+            goals = get_goals(task)
+            if len(goals) > 1:
+                for goal in goals:
+                    if goal.name == "walked":
+                        description += f"Couple {goal.terms[0].name} walked to place {goal.terms[1].name}. \n"
+            else:
+                if goal == "walked":
+                    description += f"Couple {goal.terms[0].name} walked to place {goal.terms[1].name}. \n"
+                
+            write_anchor_files(problem_file, description)
 
 
 if __name__ == "__main__":
-    b = Blocksworld()
-    b.convert_pddl_to_nl("data/01_raw_dataset/training/blocksworld")
+    # b = Blocksworld()
+    # b.convert_pddl_to_nl("data/01_raw_dataset/training/blocksworld")
     
-    b = Barman()
-    b.convert_pddl_to_nl("data/01_raw_dataset/training/barman")
+    # b = Barman()
+    # b.convert_pddl_to_nl("data/01_raw_dataset/training/barman")
     
-    f = Floortile()
-    f.convert_pddl_to_nl("data/01_raw_dataset/training/floortile")
+    # f = Floortile()
+    # f.convert_pddl_to_nl("data/01_raw_dataset/training/floortile")
     
-    g = Grippers()
-    g.convert_pddl_to_nl("data/01_raw_dataset/training/grippers")
+    # g = Grippers()
+    # g.convert_pddl_to_nl("data/01_raw_dataset/training/grippers")
     
-    l = Logistics()
-    l.convert_pddl_to_nl("data/01_raw_dataset/training/logistics")
+    # l = Logistics()
+    # l.convert_pddl_to_nl("data/01_raw_dataset/training/logistics")
     
-    t = Termes()
-    t.convert_pddl_to_nl("data/01_raw_dataset/training/termes")
+    # t = Termes()
+    # t.convert_pddl_to_nl("data/01_raw_dataset/training/termes")
     
-    s = Storage()
-    s.convert_pddl_to_nl("data/01_raw_dataset/training/storage")
+    # s = Storage()
+    # s.convert_pddl_to_nl("data/01_raw_dataset/training/storage")
     
-    # ADD TidyBot domain
+    # r = Rovers()
+    # r.convert_pddl_to_nl("data/01_raw_dataset/training/rovers")
+    
+    # TESTING DATASET
+    h = Hiking()
+    h.convert_pddl_to_nl("data/01_raw_dataset/testing/hiking")
+    
+    # m = MiniGrid()
+    # m.convert_pddl_to_nl("data/01_raw_dataset/testing/minigrid")
+    

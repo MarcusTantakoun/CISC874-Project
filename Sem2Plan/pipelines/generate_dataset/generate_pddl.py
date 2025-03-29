@@ -400,7 +400,7 @@ class Rovers(Domain):
         while len(seen_problems) < max_iters:
             
             num_rovers = random.randint(2, args.rovers)
-            num_waypoints = random.randint(2, args.waypoints)
+            num_waypoints = random.randint(args.rovers + 1, args.waypoints)
             num_objectives = random.randint(2, args.objectives)
             num_cameras = random.randint(2, args.cameras)
             num_goals = random.randint(2, args.goals)
@@ -615,7 +615,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Rovers Problem Generator")
     parser.add_argument("--name", type=str, default="rovers")
     parser.add_argument("--rovers", type=int, default=2)
-    parser.add_argument("--waypoints", type=int, default=2)
+    parser.add_argument("--waypoints", type=int, default=5)
     parser.add_argument("--objectives", type=int, default=2)
     parser.add_argument("--cameras", type=int, default=2)
     parser.add_argument("--goals", type=int, default=2)
