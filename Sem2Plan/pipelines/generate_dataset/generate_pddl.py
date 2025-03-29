@@ -386,36 +386,132 @@ class Logistics(Domain):
                 break  # Stop if reaching limit
 
 
-class TidyBot(Domain):
-    pass
+class Rovers(Domain):
+    def generate_problem(self, dataset_dir: str, args):
+
+        max_iters = args.max_iterations
+        
+        seen_problems = set()  # Store unique problems
+        iteration = 0
+        
+        problem_dir = os.path.join(dataset_dir, "problems")
+        os.makedirs(problem_dir, exist_ok=True)
+        
+        while len(seen_problems) < max_iters:
+            
+            num_rovers = random.randint(2, args.rovers)
+            num_waypoints = random.randint(2, args.waypoints)
+            num_objectives = random.randint(2, args.objectives)
+            num_cameras = random.randint(2, args.cameras)
+            num_goals = random.randint(2, args.goals)
+            dynamic_seed = random.randint(1, args.seed)
+
+            command = ['pddl-generators/rovers/rovgen', str(dynamic_seed), str(num_rovers), str(num_waypoints), str(num_objectives), str(num_cameras), str(num_goals)]
+
+            try:
+                result = subprocess.run(command, check=True, text=True, capture_output=True)
+                desc = result.stdout  # Capture the standard output as a string
+                print(desc)
+            except subprocess.CalledProcessError as e:
+                print(f"Error running the command: {e}")
+                
+            problem_hash = hashlib.md5(desc.encode()).hexdigest()  # Generate a unique hash for the problem
+            
+            if problem_hash not in seen_problems:
+                seen_problems.add(problem_hash)
+                problem_path = write_file(problem_dir, iteration, desc)
+                parsed_problem = parse_problem_file(problem_path)
+                
+                with open(problem_path, 'w') as f:
+                    f.write(parsed_problem)
+                    
+                iteration += 1
+
+            if iteration >= max_iters:
+                break  # Stop if reaching limit
 
 
-class Movie(Domain):
-    def generate_problem(self, dataset_dir, args):
-        pass
-    
-    def get_objects():
-        pass
-    
-    def get_init():
-        pass
-    
-    def get_goals():
-        pass
+class Hiking(Domain):
+    def generate_problem(self, dataset_dir: str, args):
+
+        max_iters = args.max_iterations
+        
+        seen_problems = set()  # Store unique problems
+        iteration = 0
+        
+        problem_dir = os.path.join(dataset_dir, "problems")
+        os.makedirs(problem_dir, exist_ok=True)
+        
+        while len(seen_problems) < max_iters:
+            
+            num_couples = random.randint(2, args.couples)
+            num_cars = random.randint(num_couples+1, args.cars)
+            num_places = random.randint(2, args.places)
+            dynamic_seed = random.randint(1, args.seed)
+
+            command = ['pddl-generators/hiking/generator.py', str(num_couples), str(num_cars), str(num_places), str(dynamic_seed)]
+
+            try:
+                result = subprocess.run(command, check=True, text=True, capture_output=True)
+                desc = result.stdout  # Capture the standard output as a string
+                print(desc)
+            except subprocess.CalledProcessError as e:
+                print(f"Error running the command: {e}")
+                
+            problem_hash = hashlib.md5(desc.encode()).hexdigest()  # Generate a unique hash for the problem
+            
+            if problem_hash not in seen_problems:
+                seen_problems.add(problem_hash)
+                problem_path = write_file(problem_dir, iteration, desc)
+                parsed_problem = parse_problem_file(problem_path)
+                
+                with open(problem_path, 'w') as f:
+                    f.write(parsed_problem)
+                    
+                iteration += 1
+
+            if iteration >= max_iters:
+                break  # Stop if reaching limit
 
 
 class MiniGrid(Domain):
-    def generate_problem(self, dataset_dir, args):
-        pass
-    
-    def get_objects():
-        pass
-    
-    def get_init():
-        pass
-    
-    def get_goals():
-        pass
+    def generate_problem(self, dataset_dir: str, args):
+
+        max_iters = args.max_iterations
+        
+        seen_problems = set()  # Store unique problems
+        iteration = 0
+        
+        problem_dir = os.path.join(dataset_dir, "problems")
+        os.makedirs(problem_dir, exist_ok=True)
+        
+        while len(seen_problems) < max_iters:
+            
+            dynamic_seed = random.randint(1, args.seed)
+
+            command = ['pddl-generators/minigrid/mini_grid.py', "--seed", str(dynamic_seed), "floorplans/4room2.fpl"]
+
+            try:
+                result = subprocess.run(command, check=True, text=True, capture_output=True)
+                desc = result.stdout  # Capture the standard output as a string
+                print(desc)
+            except subprocess.CalledProcessError as e:
+                print(f"Error running the command: {e}")
+                
+            problem_hash = hashlib.md5(desc.encode()).hexdigest()  # Generate a unique hash for the problem
+            
+            if problem_hash not in seen_problems:
+                seen_problems.add(problem_hash)
+                problem_path = write_file(problem_dir, iteration, desc)
+                parsed_problem = parse_problem_file(problem_path)
+                
+                with open(problem_path, 'w') as f:
+                    f.write(parsed_problem)
+                    
+                iteration += 1
+
+            if iteration >= max_iters:
+                break  # Stop if reaching limit
     
 
 
@@ -512,3 +608,41 @@ class MiniGrid(Domain):
 
     # f = Termes()
     # f.generate_problem(dataset_dir="data/01_raw_dataset/training/termes", args=args)
+
+    # # ROVERS
+    # parser = argparse.ArgumentParser(description="Rovers Problem Generator")
+    # parser.add_argument("--name", type=str, default="rovers")
+    # parser.add_argument("--rovers", type=int, default=2)
+    # parser.add_argument("--waypoints", type=int, default=2)
+    # parser.add_argument("--objectives", type=int, default=2)
+    # parser.add_argument("--cameras", type=int, default=2)
+    # parser.add_argument("--goals", type=int, default=2)
+    # parser.add_argument("--seed", type=int, default=1000)
+    # parser.add_argument("--max_iterations", type=int, default=50)
+    # args = parser.parse_args()
+
+    # r = Rovers()
+    # r.generate_problem(dataset_dir="data/01_raw_dataset/training/rovers", args=args)
+
+    # # HIKING
+    # parser = argparse.ArgumentParser(description="Hiking Problem Generator")
+    # parser.add_argument("--name", type=str, default="hiking")
+    # parser.add_argument("--couples", type=int, default=4)
+    # parser.add_argument("--cars", type=int, default=6)
+    # parser.add_argument("--places", type=int, default=2)
+    # parser.add_argument("--seed", type=int, default=1000)
+    # parser.add_argument("--max_iterations", type=int, default=50)
+    # args = parser.parse_args()
+
+    # h = Hiking()
+    # h.generate_problem(dataset_dir="data/01_raw_dataset/testing/hiking", args=args)
+
+    # MINIGRID
+    parser = argparse.ArgumentParser(description="Minigrid Problem Generator")
+    parser.add_argument("--name", type=str, default="minigrid")
+    parser.add_argument("--seed", type=int, default=1000)
+    parser.add_argument("--max_iterations", type=int, default=50)
+    args = parser.parse_args()
+
+    m = MiniGrid()
+    m.generate_problem(dataset_dir="data/01_raw_dataset/testing/minigrid", args=args)
