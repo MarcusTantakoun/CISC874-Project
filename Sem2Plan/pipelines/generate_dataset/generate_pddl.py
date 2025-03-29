@@ -283,7 +283,7 @@ class Termes(Domain):
         ]:
             for height in range_height:
                 for num_towers in range_num_towers:
-                    for i in range(4):
+                    for i in range(10):
                         board_name, board_str = self.gen_board(
                             size_x, size_y, height, num_towers, seed, dataset_dir, iteration
                         )
@@ -485,11 +485,13 @@ class MiniGrid(Domain):
         problem_dir = os.path.join(dataset_dir, "problems")
         os.makedirs(problem_dir, exist_ok=True)
         
+        pddl_gen_path = "pddl-generators/minigrid/"
+        
         while len(seen_problems) < max_iters:
             
             dynamic_seed = random.randint(1, args.seed)
 
-            command = ['pddl-generators/minigrid/mini_grid.py', "--seed", str(dynamic_seed), "floorplans/4room2.fpl"]
+            command = [f'{pddl_gen_path}mini_grid.py', "--seed", str(dynamic_seed), f"{pddl_gen_path}floorplans/4room2.fpl", str(0)]
 
             try:
                 result = subprocess.run(command, check=True, text=True, capture_output=True)
@@ -515,7 +517,7 @@ class MiniGrid(Domain):
     
 
 
-# if __name__ == "__main__":
+if __name__ == "__main__":
     
     # # BARMAN
     # parser = argparse.ArgumentParser(description="Barman Problem Generator")
@@ -524,7 +526,7 @@ class MiniGrid(Domain):
     # parser.add_argument("--ingredients", type=int, default=3)
     # parser.add_argument("--shots", type=int, default=4)
     # parser.add_argument("--cocktails", type=int, default=3)
-    # parser.add_argument("--max_iterations", type=int, default=50)
+    # parser.add_argument("--max_iterations", type=int, default=100)
     # args = parser.parse_args()
 
     # b = Barman()
@@ -535,7 +537,7 @@ class MiniGrid(Domain):
     # parser.add_argument("--name", type=str, default="blocksworld")
     # parser.add_argument("--ops", type=int, default=4)
     # parser.add_argument("--blocks", type=int, default=10)
-    # parser.add_argument("--max_iterations", type=int, default=50)
+    # parser.add_argument("--max_iterations", type=int, default=100)
     # args = parser.parse_args()
 
     # b = Blocksworld()
@@ -548,7 +550,7 @@ class MiniGrid(Domain):
     # parser.add_argument("--columns", type=int, default=3)
     # parser.add_argument("--robots", type=int, default=2)
     # parser.add_argument("--mode_flag", type=str, default="time")
-    # parser.add_argument("--max_iterations", type=int, default=50)
+    # parser.add_argument("--max_iterations", type=int, default=100)
     # args = parser.parse_args()
 
     # f = Floortile()
@@ -561,7 +563,7 @@ class MiniGrid(Domain):
     # parser.add_argument("--rooms", type=int, default=8)
     # parser.add_argument("--balls", type=int, default=15)
     # parser.add_argument("--seed", type=int, default=-1)
-    # parser.add_argument("--max_iterations", type=int, default=50)
+    # parser.add_argument("--max_iterations", type=int, default=100)
     # args = parser.parse_args()
 
     # f = Grippers()
@@ -575,7 +577,7 @@ class MiniGrid(Domain):
     # parser.add_argument("--city_size", type=int, default=1)
     # parser.add_argument("--packages", type=int, default=10)
     # parser.add_argument("--trucks", type=int, default=5)
-    # parser.add_argument("--max_iterations", type=int, default=50)
+    # parser.add_argument("--max_iterations", type=int, default=100)
     # args = parser.parse_args()
     
     # l = Logistics()
@@ -589,7 +591,7 @@ class MiniGrid(Domain):
     # parser.add_argument("--containers", type=int, default=1)
     # parser.add_argument("--store_areas", type=int, default=9)
     # parser.add_argument("--crates", type=int, default=4)
-    # parser.add_argument("--max_iterations", type=int, default=50)
+    # parser.add_argument("--max_iterations", type=int, default=100)
     # args = parser.parse_args()
 
     # s = Storage()
@@ -602,47 +604,47 @@ class MiniGrid(Domain):
     # parser.add_argument("--size_y", type=int, default=3)
     # parser.add_argument("--height", type=int, default=3)
     # parser.add_argument("--towers", type=int, default=4)
-    # parser.add_argument("--seed", type=int, default=123)
-    # parser.add_argument("--max_iterations", type=int, default=50)
+    # parser.add_argument("--seed", type=int, default=1000)
+    # parser.add_argument("--max_iterations", type=int, default=100)
     # args = parser.parse_args()
 
     # f = Termes()
     # f.generate_problem(dataset_dir="data/01_raw_dataset/training/termes", args=args)
 
-    # # ROVERS
-    # parser = argparse.ArgumentParser(description="Rovers Problem Generator")
-    # parser.add_argument("--name", type=str, default="rovers")
-    # parser.add_argument("--rovers", type=int, default=2)
-    # parser.add_argument("--waypoints", type=int, default=2)
-    # parser.add_argument("--objectives", type=int, default=2)
-    # parser.add_argument("--cameras", type=int, default=2)
-    # parser.add_argument("--goals", type=int, default=2)
-    # parser.add_argument("--seed", type=int, default=1000)
-    # parser.add_argument("--max_iterations", type=int, default=50)
-    # args = parser.parse_args()
+    # ROVERS
+    parser = argparse.ArgumentParser(description="Rovers Problem Generator")
+    parser.add_argument("--name", type=str, default="rovers")
+    parser.add_argument("--rovers", type=int, default=2)
+    parser.add_argument("--waypoints", type=int, default=2)
+    parser.add_argument("--objectives", type=int, default=2)
+    parser.add_argument("--cameras", type=int, default=2)
+    parser.add_argument("--goals", type=int, default=2)
+    parser.add_argument("--seed", type=int, default=1000)
+    parser.add_argument("--max_iterations", type=int, default=100)
+    args = parser.parse_args()
 
-    # r = Rovers()
-    # r.generate_problem(dataset_dir="data/01_raw_dataset/training/rovers", args=args)
+    r = Rovers()
+    r.generate_problem(dataset_dir="data/01_raw_dataset/training/rovers", args=args)
 
     # # HIKING
     # parser = argparse.ArgumentParser(description="Hiking Problem Generator")
     # parser.add_argument("--name", type=str, default="hiking")
-    # parser.add_argument("--couples", type=int, default=4)
-    # parser.add_argument("--cars", type=int, default=6)
-    # parser.add_argument("--places", type=int, default=2)
+    # parser.add_argument("--couples", type=int, default=6)
+    # parser.add_argument("--cars", type=int, default=8)
+    # parser.add_argument("--places", type=int, default=4)
     # parser.add_argument("--seed", type=int, default=1000)
-    # parser.add_argument("--max_iterations", type=int, default=50)
+    # parser.add_argument("--max_iterations", type=int, default=100)
     # args = parser.parse_args()
 
     # h = Hiking()
     # h.generate_problem(dataset_dir="data/01_raw_dataset/testing/hiking", args=args)
 
-    # MINIGRID
-    parser = argparse.ArgumentParser(description="Minigrid Problem Generator")
-    parser.add_argument("--name", type=str, default="minigrid")
-    parser.add_argument("--seed", type=int, default=1000)
-    parser.add_argument("--max_iterations", type=int, default=50)
-    args = parser.parse_args()
+    # # MINIGRID
+    # parser = argparse.ArgumentParser(description="Minigrid Problem Generator")
+    # parser.add_argument("--name", type=str, default="minigrid")
+    # parser.add_argument("--seed", type=int, default=1000)
+    # parser.add_argument("--max_iterations", type=int, default=100)
+    # args = parser.parse_args()
 
-    m = MiniGrid()
-    m.generate_problem(dataset_dir="data/01_raw_dataset/testing/minigrid", args=args)
+    # m = MiniGrid()
+    # m.generate_problem(dataset_dir="data/01_raw_dataset/testing/minigrid", args=args)
