@@ -111,7 +111,7 @@ class TorchTestDataset(torch.utils.data.Dataset):
     def __len__(self):
         return len(self.data)
 
-    def __get__item(self, idx):
+    def __getitem__(self, idx):
         return self.data.iloc[idx].to_dict()
 
         
