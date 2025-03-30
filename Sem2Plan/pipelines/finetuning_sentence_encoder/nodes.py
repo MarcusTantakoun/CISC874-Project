@@ -11,6 +11,9 @@ from sentence_transformers.training_args import SentenceTransformerTrainingArgum
 from transformers import TrainerCallback
 from .finetune_dataset import create_train_dataset
 from ..setup_sentence_encoder.nodes import create_sentence_encoder_helper
+import time
+
+SLURM_JOB_TIME_LIMIT = 8 * 3600
 
 
 class EarlyStoppingCallback(TrainerCallback):
@@ -78,12 +81,25 @@ def train_sentence_encoder(setup_sentence_encoder_cfg, finetuning_encoder_cfg):
             loss=train_loss
         )
 
-        # train model
-        trainer.train()
+        start_time = time.time()
+        # train model and periodically save the model if near the timeout
+        for epoch in range(training_epoch):
+            trainer.train()
+            # Check for remaining time in the SLURM job
+            elapsed_time = time.time() - start_time
+            remaining_time = max(0, (SLURM_JOB_TIME_LIMIT - elapsed_time))
+            print(f"Remaining time: {remaining_time} seconds")
+
+            if remaining_time < 600:  # 10 minutes remaining
+                print("Time is running out, saving the model checkpoint...")
+                final_output_dir = f"{output_dir}/checkpoint_epoch_{epoch+1}"
+                Path(final_output_dir).mkdir(parents=True, exist_ok=True)
+                sentence_model.save(final_output_dir)
 
         final_output_dir = f"{output_dir}/final"
         Path(final_output_dir).mkdir(parents=True, exist_ok=True)
         sentence_model.save(final_output_dir)
+
 
 if __name__ == "__main__":
     
@@ -95,7 +111,7 @@ if __name__ == "__main__":
     }
 
     finetuning_encoder_cfg = {
-        "train_batch_size": 64,
+        "train_batch_size": 256,
         "training_epoch": 40,
         "is_finetune_complete": False
     }
