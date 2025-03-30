@@ -85,8 +85,12 @@ def train_sentence_encoder(setup_sentence_encoder_cfg, finetuning_encoder_cfg):
             model=sentence_model,
             args=args,
             train_dataset=train_dataset,
+<<<<<<< HEAD
             loss=train_loss,
             callbacks=[EarlyStoppingCallback(early_stopping_patience=8, early_stopping_threshold=0.05)]
+=======
+            loss=train_loss
+>>>>>>> 436ec877b0b01c8700f26639c3d234beb5ad3e11
         )
 
         # train model
@@ -106,7 +110,11 @@ if __name__ == "__main__":
     }
 
     finetuning_encoder_cfg = {
+<<<<<<< HEAD
         "train_batch_size": 256,
+=======
+        "train_batch_size": 64,
+>>>>>>> 436ec877b0b01c8700f26639c3d234beb5ad3e11
         "training_epoch": 40,
         "is_finetune_complete": False
     }

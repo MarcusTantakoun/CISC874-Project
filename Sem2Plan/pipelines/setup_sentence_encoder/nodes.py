@@ -11,8 +11,31 @@ def create_sentence_encoder_helper(setup_sentence_encoder_cfg):
     device = setup_sentence_encoder_cfg["device"]
 
     if model_type == "bi_encoder":
+<<<<<<< HEAD
             model = SentenceTransformer(model_name, device=device)
             return model
+=======
+        if model_name == "microsoft/codebert-base":
+            # Load CodeBERT as a Transformer model
+            word_embedding_model = models.Transformer(model_name, max_seq_length=512)
+
+            # Apply mean pooling (since CodeBERT outputs token-level embeddings)
+            pooling_model = models.Pooling(
+                word_embedding_model.get_word_embedding_dimension(), pooling_mode_mean_tokens=True
+            )
+
+            # Wrap CodeBERT as a SentenceTransformer model
+            model = SentenceTransformer(modules=[word_embedding_model, pooling_model], device=device)
+
+        elif model_name == "all-roberta-large-v1":
+            # Load RoBERTa-large as a prebuilt SentenceTransformer model
+            model = SentenceTransformer(model_name, device=device)
+
+        else:
+            raise ValueError(f"Unsupported model name: {model_name}")
+
+        return model
+>>>>>>> 436ec877b0b01c8700f26639c3d234beb5ad3e11
     else:
         return None
 
