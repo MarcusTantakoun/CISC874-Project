@@ -14,7 +14,7 @@ from pddl.core import Problem
 from ...utils.pddl_manipulation import get_manipulated_problem_list
 
 """
-This module sets up the training / testing dataset
+This module sets up the training / testing dataset for training the model.
 """
 
 class TorchDataset(torch.utils.data.Dataset):
@@ -101,11 +101,24 @@ class TorchDataset(torch.utils.data.Dataset):
     
     def shuffle(self):
         self.data = self.data.sample(frac=1).reset_index(drop=True)
+
+
+
+class TorchTestDataset(torch.utils.data.Dataset):
+    def __init__(self, dataframe):
+        self.data = dataframe
+    
+    def __len__(self):
+        return len(self.data)
+
+    def __get__item(self, idx):
+        return self.data.iloc[idx].to_dict()
+
         
 
 def create_train_dataset():
     """loads in training dataset"""
-    data_dir = os.path.join(os.environ['WORKING_DIR'], "data/LOCATION")
+    data_dir = "data/02_intermediate_dataset/training"
     data_paths = glob(os.path.join(data_dir, "*jsonl"))
     train_dataset = load_dataset("json", data_files=data_paths, split="train")
     print("Length of train dataset: ", len(train_dataset))
@@ -162,6 +175,7 @@ def generate_dataset(data_path, save_path, total_num_examples = 1.0e5, chunksize
     
     
 if __name__ == "__main__":
-    generate_dataset(data_path="data/01_raw_dataset/training/", save_path="data/02_intermediate_dataset/training/")
+    # generate_dataset(data_path="data/01_raw_dataset/training/", save_path="data/02_intermediate_dataset/training/")
+    create_train_dataset()
 
 

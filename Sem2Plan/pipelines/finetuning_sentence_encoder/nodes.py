@@ -1,3 +1,7 @@
+"""
+This module is dedicated to training the selected sentence model.
+"""
+
 import random
 import torch
 import os
@@ -15,6 +19,7 @@ from transformers import TrainerCallback
 from datasets import load_dataset
 import tqdm
 from pddl.parser.problem import ProblemParser
+from .finetune_dataset import create_train_dataset, create_test_dataset, create_eval_dataset
 
 class EarlyStoppingCallback(TrainerCallback):
     def __init__(self, early_stopping_patience: int, early_stopping_threshold: float):
@@ -37,15 +42,9 @@ class EarlyStoppingCallback(TrainerCallback):
                     print("Early stopping triggered")
                     control.should_training_stop = True     
 
-def train_sentence_encoder(
-    setup_sentence_encoder_cfg, 
-    finetuning_encoder_cfg, 
-    cosine_sim_comparison_data
-    ):
+def train_sentence_encoder(setup_sentence_encoder_cfg, finetuning_encoder_cfg, cosine_sim_comparison_data):
     
     train_batch_size = finetuning_encoder_cfg['train_batch_size']
-    eval_negative_weights = finetuning_encoder_cfg['eval_negative_weights']
-    train_negative_weights = finetuning_encoder_cfg['train_negative_weights']
     training_epoch = finetuning_encoder_cfg['training_epoch']
     is_finetune_complete = finetuning_encoder_cfg['is_finetune_complete']
     
@@ -55,33 +54,26 @@ def train_sentence_encoder(
         sentence_model = SentenceTransformer(model_name)
         
         # save path of model
-        output_dir = os.path.join(os.environ['WORKING_DIR'], "data/02_models", f"finetuned_sentence_encoder_batch_{train_batch_size}_{datetime.now().strftime('%Y-%m-%d_%H-%M-%S')}")
+        output_dir = os.path.join("data/03_models", f"finetuned_sentence_encoder_batch_{train_batch_size}_{datetime.now().strftime('%Y-%m-%d_%H-%M-%S')}")
         print(f"Model will be saved at: {output_dir}")
         Path(output_dir).mkdir(parents=True, exist_ok=True)
         
         # load dataset
         train_dataset = create_train_dataset()
-        eval_dataset = create_eval_dataset()
         
         # convert dataset to InputExample format
-        train_examples = [InputExample(texts=[d['anchor'], d['positive'], d['negative']]) for d in train_dataset]
-        eval_examples = [InputExample(texts=[d['anchor'], d['positive'], d['negative']]) for d in eval_dataset]
+        train_examples = [InputExample(texts=[d['anchor'], d['positive'], d['negatives']]) for d in train_dataset]
         
         # Create DataLoader
         train_dataloader = DataLoader(train_examples, shuffle=True, batch_size=train_batch_size)
-        eval_dataloader = DataLoader(eval_examples, shuffle=False, batch_size=train_batch_size)
 
         # Define training loss function
         # train_loss = losses.BatchHardTripletLoss(sentence_model)
         train_loss = losses.MultipleNegativesRankingLoss(sentence_model)
 
-        # Define evaluator (optional)
-        evaluator = TripletEvaluator.from_input_examples(eval_examples, name="eval")
-
         # Train model
         sentence_model.fit(
             train_objectives=[(train_dataloader, train_loss)],
-            evaluator=evaluator,
             epochs=training_epoch,
             warmup_steps=100,
             evaluation_steps=1000,  # Optional, adjust based on dataset size

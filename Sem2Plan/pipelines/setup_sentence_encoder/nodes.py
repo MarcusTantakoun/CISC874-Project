@@ -10,10 +10,12 @@ def create_sentence_encoder_helper(setup_sentence_encoder_cfg):
 
     device = setup_sentence_encoder_cfg['device']
 
-    if model_type == "cross_encoder":
-        model = CrossEncoder(model_name)
-    elif model_type == "bi_encoder":
-        model = SentenceTransformer(model_name)
+    if model_type == "bi_encoder":
+        model = SentenceTransformer(model_name, device=device)
+    else: return None
 
     return model
 
+def init_bi_encoder(setup_sentence_encoder_cfg):
+    model_type = setup_sentence_encoder_cfg['model_type']
+    
