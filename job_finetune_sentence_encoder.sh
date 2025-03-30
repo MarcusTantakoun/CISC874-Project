@@ -5,9 +5,9 @@
 #SBATCH --cpus-per-task=32            # Number of CPU cores per task
 #SBATCH --gres=gpu:1                  # Number of GPUs per node
 #SBATCH --mem=128000M
-#SBATCH --time=0-0:20:00               # Maximum execution time (HH:MM:SS)
-#SBATCH --output=./slurm_out/test_llama_inference-%j.out            
-#SBATCH --error=./slurm_out/test_llama_inference-%j.err
+#SBATCH --time=0-3:00:00               # Maximum execution time (HH:MM:SS)
+#SBATCH --output=./slurm_out/fine-tune-%j.out            
+#SBATCH --error=./slurm_out/fine-tune-%j.err
 #SBATCH --account=rrg-zhu2048
 
 module load StdEnv/2023
@@ -50,5 +50,5 @@ srun -c 8 \
     --mem=128000 \
     --gres=gpu:1 \
     bash -c '
-    python /path/to/finetune.py
+    python ./finetune.py
     '

@@ -11,10 +11,6 @@ def create_sentence_encoder_helper(setup_sentence_encoder_cfg):
     device = setup_sentence_encoder_cfg["device"]
 
     if model_type == "bi_encoder":
-<<<<<<< HEAD
-            model = SentenceTransformer(model_name, device=device)
-            return model
-=======
         if model_name == "microsoft/codebert-base":
             # Load CodeBERT as a Transformer model
             word_embedding_model = models.Transformer(model_name, max_seq_length=512)
@@ -35,7 +31,6 @@ def create_sentence_encoder_helper(setup_sentence_encoder_cfg):
             raise ValueError(f"Unsupported model name: {model_name}")
 
         return model
->>>>>>> 436ec877b0b01c8700f26639c3d234beb5ad3e11
     else:
         return None
 
