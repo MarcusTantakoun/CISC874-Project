@@ -11,7 +11,7 @@ import pandas as pd
 from datetime import datetime
 from pathlib import Path
 from torch.utils.data import DataLoader
-from sentence_transformers import SentenceTransformer, losses, InputExample
+from sentence_transformers import SentenceTransformer, losses, InputExample, SentencesDataset
 from sentence_transformers.evaluation import TripletEvaluator
 from sentence_transformers.trainer import SentenceTransformerTrainer
 from sentence_transformers.training_args import BatchSamplers, SentenceTransformerTrainingArguments
@@ -19,7 +19,9 @@ from transformers import TrainerCallback
 from datasets import load_dataset
 import tqdm
 from pddl.parser.problem import ProblemParser
-from .finetune_dataset import create_train_dataset, create_test_dataset, create_eval_dataset
+from .finetune_dataset import create_train_dataset
+from ..setup_sentence_encoder.nodes import create_sentence_encoder_helper
+
 
 class EarlyStoppingCallback(TrainerCallback):
     def __init__(self, early_stopping_patience: int, early_stopping_threshold: float):
@@ -42,7 +44,8 @@ class EarlyStoppingCallback(TrainerCallback):
                     print("Early stopping triggered")
                     control.should_training_stop = True     
 
-def train_sentence_encoder(setup_sentence_encoder_cfg, finetuning_encoder_cfg, cosine_sim_comparison_data):
+
+def train_sentence_encoder(setup_sentence_encoder_cfg, finetuning_encoder_cfg):
     
     train_batch_size = finetuning_encoder_cfg['train_batch_size']
     training_epoch = finetuning_encoder_cfg['training_epoch']
@@ -50,8 +53,7 @@ def train_sentence_encoder(setup_sentence_encoder_cfg, finetuning_encoder_cfg, c
     
     # define SentenceTransformer model
     if not is_finetune_complete:
-        model_name = setup_sentence_encoder_cfg['model_name']
-        sentence_model = SentenceTransformer(model_name)
+        sentence_model = create_sentence_encoder_helper(setup_sentence_encoder_cfg)
         
         # save path of model
         output_dir = os.path.join("data/03_models", f"finetuned_sentence_encoder_batch_{train_batch_size}_{datetime.now().strftime('%Y-%m-%d_%H-%M-%S')}")
@@ -60,28 +62,53 @@ def train_sentence_encoder(setup_sentence_encoder_cfg, finetuning_encoder_cfg, c
         
         # load dataset
         train_dataset = create_train_dataset()
-        
-        # convert dataset to InputExample format
-        train_examples = [InputExample(texts=[d['anchor'], d['positive'], d['negatives']]) for d in train_dataset]
-        
-        # Create DataLoader
-        train_dataloader = DataLoader(train_examples, shuffle=True, batch_size=train_batch_size)
 
-        # Define training loss function
-        # train_loss = losses.BatchHardTripletLoss(sentence_model)
-        train_loss = losses.MultipleNegativesRankingLoss(sentence_model)
-
-        # Train model
-        sentence_model.fit(
-            train_objectives=[(train_dataloader, train_loss)],
-            epochs=training_epoch,
-            warmup_steps=100,
-            evaluation_steps=1000,  # Optional, adjust based on dataset size
-            output_path=output_dir,
-            show_progress_bar=True
+        train_loss = losses.MultipleNegativesRankingLoss(model=sentence_model)
+        
+        num_examples = len(train_dataset)
+        args = SentenceTransformerTrainingArguments(
+            output_dir=output_dir,
+            per_device_train_batch_size=train_batch_size,
+            warmup_ratio=0.1,
+            fp16=False,
+            bf16=False,
+            num_train_epochs=training_epoch,
+            max_steps=num_examples * training_epoch // train_batch_size,
+            save_total_limit=10,
+            logging_steps=10,
+            logging_first_step=True,
+            run_name=f"batch_{train_batch_size}_finetune_sentence_encoder_on_{setup_sentence_encoder_cfg['model_name'].split('/'[-1])}"
         )
-        
-        # save final model
+
+        # set up the trainer
+        trainer = SentenceTransformerTrainer(
+            model=sentence_model,
+            args=args,
+            train_dataset=train_dataset,
+            loss=train_loss,
+            callbacks=[EarlyStoppingCallback(early_stopping_patience=8, early_stopping_threshold=0.05)]
+        )
+
+        # train model
+        trainer.train()
+
         final_output_dir = f"{output_dir}/final"
         Path(final_output_dir).mkdir(parents=True, exist_ok=True)
         sentence_model.save(final_output_dir)
+
+if __name__ == "__main__":
+    
+    setup_sentence_encoder_cfg = {
+        "model_name": "microsoft/codebert-base",
+        "model_type": "bi_encoder",
+        "device": "cpu",  # Change to "cuda" if using GPU
+        "is_evaluated": False
+    }
+
+    finetuning_encoder_cfg = {
+        "train_batch_size": 256,
+        "training_epoch": 40,
+        "is_finetune_complete": False
+    }
+
+    train_sentence_encoder(setup_sentence_encoder_cfg=setup_sentence_encoder_cfg, finetuning_encoder_cfg=finetuning_encoder_cfg)

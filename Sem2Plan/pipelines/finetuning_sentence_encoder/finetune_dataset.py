@@ -111,7 +111,7 @@ class TorchTestDataset(torch.utils.data.Dataset):
     def __len__(self):
         return len(self.data)
 
-    def __get__item(self, idx):
+    def __getitem__(self, idx):
         return self.data.iloc[idx].to_dict()
 
         
@@ -175,7 +175,7 @@ def generate_dataset(data_path, save_path, total_num_examples = 1.0e5, chunksize
     
     
 if __name__ == "__main__":
-    # generate_dataset(data_path="data/01_raw_dataset/training/", save_path="data/02_intermediate_dataset/training/")
-    create_train_dataset()
+    generate_dataset(data_path="data/01_raw_dataset/training/", save_path="data/02_intermediate_dataset/training/")
+    generate_dataset(data_path="data/01_raw_dataset/testing/", save_path="data/02_intermediate_dataset/testing/")
 
 
