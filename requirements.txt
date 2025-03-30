@@ -6,9 +6,9 @@ tabulate
 # Sentence Transformers
 sentence-transformers
 
-torch
-datasets~=2.20.0
-transformers[torch]
+# torch
+# datasets~=2.20.0
+# transformers[torch]
 
 # Utils 
 tqdm

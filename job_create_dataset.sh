@@ -19,7 +19,7 @@ virtualenv --no-download $SLURM_TMPDIR/env
 source $SLURM_TMPDIR/env/bin/activate
 
 
-pip install --no-index torch scikit_learn tqdm nltk torchtext transformers>=4.43.1 spacy triton accelerate datasets scipy matplotlib numpy huggingface_hub ipython pddl tabulate sentence-transformers pandas einops seaborn natsort jsonlines
+pip install --no-index torch scikit_learn tqdm nltk torchtext transformers>=4.43.1 spacy triton accelerate datasets scipy matplotlib numpy huggingface_hub ipython pddl tabulate sentence-transformers
 
 # Environment variables
 export MASTER_ADDR=$(hostname)
