@@ -18,7 +18,7 @@ pip install --upgrade pip --no-index
 virtualenv --no-download $SLURM_TMPDIR/env
 source $SLURM_TMPDIR/env/bin/activate
 
-
+pip install --no-index sentence-transformers
 pip install --no-index torch scikit_learn tqdm nltk torchtext transformers>=4.43.1 spacy triton accelerate datasets scipy matplotlib numpy huggingface_hub ipython
 pip install -r requirements.txt
 

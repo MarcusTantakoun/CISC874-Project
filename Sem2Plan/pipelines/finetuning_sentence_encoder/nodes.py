@@ -2,23 +2,13 @@
 This module is dedicated to training the selected sentence model.
 """
 
-import random
-import torch
 import os
-import glob
-import json
-import pandas as pd
 from datetime import datetime
 from pathlib import Path
-from torch.utils.data import DataLoader
-from sentence_transformers import SentenceTransformer, losses, InputExample, SentencesDataset
-from sentence_transformers.evaluation import TripletEvaluator
+from sentence_transformers import losses
 from sentence_transformers.trainer import SentenceTransformerTrainer
-from sentence_transformers.training_args import BatchSamplers, SentenceTransformerTrainingArguments
+from sentence_transformers.training_args import SentenceTransformerTrainingArguments
 from transformers import TrainerCallback
-from datasets import load_dataset
-import tqdm
-from pddl.parser.problem import ProblemParser
 from .finetune_dataset import create_train_dataset
 from ..setup_sentence_encoder.nodes import create_sentence_encoder_helper
 
