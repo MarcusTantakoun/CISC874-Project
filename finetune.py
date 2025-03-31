@@ -4,9 +4,23 @@ import torch.distributed as dist
 import torch
 
 def setup_distributed():
-    dist.init_process_group(backend='nccl')
-    local_rank = int(os.environ['LOCAL_RANK'])
+    """ Initializes distributed training and assigns correct GPU. """
+    if not dist.is_initialized():
+        dist.init_process_group(backend='nccl')
+    
+    local_rank = int(os.environ.get("LOCAL_RANK", 0))
+    rank = int(os.environ.get("RANK", 0))
+    world_size = int(os.environ.get("WORLD_SIZE", 1))
+
+    # Explicitly set CUDA device
     torch.cuda.set_device(local_rank)
+
+    # Synchronize processes
+    dist.barrier()
+
+    if rank == 0:
+        print(f"Distributed training initialized. World size: {world_size}, Local rank: {local_rank}")
+
     return local_rank
 
 if __name__=="__main__":

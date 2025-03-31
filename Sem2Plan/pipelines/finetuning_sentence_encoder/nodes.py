@@ -13,6 +13,7 @@ from .finetune_dataset import create_train_dataset
 from ..setup_sentence_encoder.nodes import create_sentence_encoder_helper
 import time
 import torch
+import torch.distributed as dist
 
 SLURM_JOB_TIME_LIMIT = 1200
 
@@ -74,26 +75,29 @@ def train_sentence_encoder(setup_sentence_encoder_cfg, finetuning_encoder_cfg):
     local_rank = int(os.environ.get("LOCAL_RANK", 0))
     rank = int(os.environ.get("RANK", 0))
     world_size = int(os.environ.get("WORLD_SIZE", 1))
-    
-    # set device
+
+    # Use assigned GPU
     torch.cuda.set_device(local_rank)
-    if torch.distributed.is_initialized():
-        torch.distributed.barrier()
-        
-    # clear GPU cache
-    torch.cuda.empty_cache()
-    
-    # initalize model
+
+    # Synchronize before training starts
+    dist.barrier()
+
+    # Clear GPU cache
+    with torch.cuda.device(local_rank):
+        torch.cuda.empty_cache()
+
+    # Initialize model
     sentence_model = create_sentence_encoder_helper(setup_sentence_encoder_cfg)
     sentence_model = sentence_model.to(f"cuda:{local_rank}")
-    
+
     # Verify device placement
-    if torch.distributed.is_initialized():
-        assert all(p.device == torch.device(f"cuda:{local_rank}") 
-                for p in sentence_model.parameters())
+    for p in sentence_model.parameters():
+        assert p.device == torch.device(f"cuda:{local_rank}"), f"Model not on correct GPU: {p.device}"
+
     
     # only rank 0 should handle output directory
     if rank == 0:
+        print(f"Training started on rank {rank} (local rank {local_rank}) with batch size {train_batch_size}.")
         output_dir = os.path.join("data/03_models", f"finetuned_sentence_encoder_batch_{train_batch_size}_{datetime.now().strftime('%Y-%m-%d_%H-%M-%S')}")
         print(f"Model will be saved at: {output_dir}")
         Path(output_dir).mkdir(parents=True, exist_ok=True)
