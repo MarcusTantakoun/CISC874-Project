@@ -125,11 +125,13 @@ def create_train_dataset():
     return train_dataset
     
 
-def create_eval_dataset():
-    pass
-
 def create_test_dataset():
-    pass
+    data_dir = "data/02_intermediate_dataset/testing"
+    data_paths = glob(os.path.join(data_dir, "*jsonl"))
+    test_dataset = load_dataset("json", data_files=data_paths, split="train")
+    print("Length of test dataset: ", len(test_dataset))
+    return test_dataset
+    
     
     
 def generate_dataset(data_path, save_path, total_num_examples = 1.0e5, chunksize=5000):

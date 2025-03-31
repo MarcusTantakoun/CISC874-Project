@@ -16,7 +16,6 @@ if __name__=="__main__":
     setup_sentence_encoder_cfg = {
         "model_name": "/home/tant2002/scratch/codebert-base",
         "model_type": "bi_encoder",
-        "device": f"cuda:{local_rank}",  # Assign specific GPU
         "is_evaluated": False,
         "local_rank": local_rank  # Pass to training function
     }
@@ -28,6 +27,6 @@ if __name__=="__main__":
     }
     
     if local_rank == 0:
-        print(f"Starting training with config: {setup_sentence_encoder_cfg}")
+        print(f"Starting training on rank {local_rank} with config: {setup_sentence_encoder_cfg}")
 
     train_sentence_encoder(setup_sentence_encoder_cfg=setup_sentence_encoder_cfg, finetuning_encoder_cfg=finetuning_encoder_cfg)

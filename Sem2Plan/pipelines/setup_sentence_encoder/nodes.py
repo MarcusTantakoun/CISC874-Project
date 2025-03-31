@@ -6,9 +6,8 @@ Since SentenceTransformer expects models from sentence-transformers/*, you need 
 
 # Modify create_sentence_encoder_helper to wrap CodeBERT with a mean-pooling strategy:
 def create_sentence_encoder_helper(setup_sentence_encoder_cfg):
-    model_name = setup_sentence_encoder_cfg["model_name"]
-    model_type = setup_sentence_encoder_cfg["model_type"]
-    device = setup_sentence_encoder_cfg["device"]
+    model_name = setup_sentence_encoder_cfg['model_name']
+    model_type = setup_sentence_encoder_cfg['model_type']
 
     if model_type == "bi_encoder":
         if model_name == "/home/tant2002/scratch/codebert-base":
@@ -21,11 +20,11 @@ def create_sentence_encoder_helper(setup_sentence_encoder_cfg):
             )
 
             # Wrap CodeBERT as a SentenceTransformer model
-            model = SentenceTransformer(modules=[word_embedding_model, pooling_model], device=device)
+            model = SentenceTransformer(modules=[word_embedding_model, pooling_model])
 
         elif model_name == "all-roberta-large-v1":
             # Load RoBERTa-large as a prebuilt SentenceTransformer model
-            model = SentenceTransformer(model_name, device=device)
+            model = SentenceTransformer(model_name)
 
         else:
             raise ValueError(f"Unsupported model name: {model_name}")

@@ -7,7 +7,7 @@ from datetime import datetime
 from pathlib import Path
 from sentence_transformers import losses
 from sentence_transformers.trainer import SentenceTransformerTrainer
-from sentence_transformers.training_args import SentenceTransformerTrainingArguments
+from sentence_transformers.training_args import BatchSamplers, SentenceTransformerTrainingArguments
 from transformers import TrainerCallback
 from .finetune_dataset import create_train_dataset
 from ..setup_sentence_encoder.nodes import create_sentence_encoder_helper
@@ -15,6 +15,31 @@ import time
 import torch
 
 SLURM_JOB_TIME_LIMIT = 1200
+
+class TimeLimitCallback(TrainerCallback):
+    """Saves checkpoint when <10 minutes remain in SLURM job"""
+    def __init__(self, time_limit_seconds, output_dir):
+        self.start_time = time.time()
+        self.time_limit = time_limit_seconds
+        self.output_dir = output_dir
+        self.warning_triggered = False
+
+    def on_step_begin(self, args, state, control, **kwargs):
+        if not self.warning_triggered:
+            elapsed = time.time() - self.start_time
+            remaining = self.time_limit - elapsed
+            
+            if remaining < 600:  # 10 minutes = 600 seconds
+                self.warning_triggered = True
+                if torch.distributed.get_rank() == 0:  # Only rank 0 saves
+                    checkpoint_dir = os.path.join(self.output_dir, "emergency_checkpoint")
+                    print(f"\n⚠️ Less than 10 minutes remaining! Saving checkpoint to {checkpoint_dir}")
+                    kwargs['model'].save(checkpoint_dir)
+                    # Write metadata file
+                    with open(os.path.join(checkpoint_dir, "checkpoint_info.txt"), "w") as f:
+                        f.write(f"Emergency save at {datetime.now().isoformat()}\n")
+                        f.write(f"Remaining time: {remaining//60}m {remaining%60:.0f}s\n")
+                        f.write(f"Training step: {state.global_step}\n")
 
 
 class EarlyStoppingCallback(TrainerCallback):
@@ -41,89 +66,103 @@ class EarlyStoppingCallback(TrainerCallback):
 
 def train_sentence_encoder(setup_sentence_encoder_cfg, finetuning_encoder_cfg):
     
-    local_rank = setup_sentence_encoder_cfg.get('local_rank', 0)
-    
+    # initialize sentence encoder cfg
     train_batch_size = finetuning_encoder_cfg['train_batch_size']
     training_epoch = finetuning_encoder_cfg['training_epoch']
-    # is_finetune_complete = finetuning_encoder_cfg['is_finetune_complete']
     
-    # Initialize model
+    # initialize distributed training
+    local_rank = int(os.environ.get("LOCAL_RANK", 0))
+    rank = int(os.environ.get("RANK", 0))
+    world_size = int(os.environ.get("WORLD_SIZE", 1))
+    
+    # set device
+    torch.cuda.set_device(local_rank)
+    if torch.distributed.is_initialized():
+        torch.distributed.barrier()
+        
+    # clear GPU cache
+    torch.cuda.empty_cache()
+    
+    # initalize model
     sentence_model = create_sentence_encoder_helper(setup_sentence_encoder_cfg)
+    sentence_model = sentence_model.to(f"cuda:{local_rank}")
     
-    if local_rank == 0:
-        # save path of model
+    # Verify device placement
+    if torch.distributed.is_initialized():
+        assert all(p.device == torch.device(f"cuda:{local_rank}") 
+                for p in sentence_model.parameters())
+    
+    # only rank 0 should handle output directory
+    if rank == 0:
         output_dir = os.path.join("data/03_models", f"finetuned_sentence_encoder_batch_{train_batch_size}_{datetime.now().strftime('%Y-%m-%d_%H-%M-%S')}")
         print(f"Model will be saved at: {output_dir}")
         Path(output_dir).mkdir(parents=True, exist_ok=True)
         
-        # load dataset
-        train_dataset = create_train_dataset()
-        train_sampler = torch.utils.data.distributed.DistributedSampler(
-            train_dataset,
-            num_replicas=int(os.environ['WORLD_SIZE']),
-            rank=local_rank
-        )
-
-        train_loss = losses.MultipleNegativesRankingLoss(model=sentence_model)
-        
-        args = SentenceTransformerTrainingArguments(
-            output_dir=output_dir if local_rank == 0 else None,
-            per_device_train_batch_size=train_batch_size,
-            warmup_ratio=0.1,
-            fp16=True,
-            bf16=False,
-            num_train_epochs=training_epoch,
-            max_steps=len(train_dataset) * training_epoch // (train_batch_size * int(os.environ['WORLD_SIZE'])),
-            save_total_limit=10,
-            logging_steps=10 if local_rank == 0 else 0,
-            logging_first_step=local_rank == 0,
-            run_name=f"batch_{train_batch_size}_finetune_sentence_encoder_on_{setup_sentence_encoder_cfg['model_name'].split('/')[-1]}" if local_rank == 0 else None
-        )
-
-        # set up the trainer
-        trainer = SentenceTransformerTrainer(
-            model=sentence_model,
-            args=args,
-            train_dataset=train_dataset,
-            loss=train_loss,
-            sampler=train_sampler
-        )
-
-        # Training loop
-        start_time = time.time()
-        for epoch in range(training_epoch):
-            train_sampler.set_epoch(epoch)
-            trainer.train()
-            
-            if local_rank == 0:
-                elapsed_time = time.time() - start_time
-                remaining_time = max(0, (SLURM_JOB_TIME_LIMIT - elapsed_time))
-                print(f"Remaining time: {remaining_time} seconds")
-
-                if remaining_time < 600:
-                    final_output_dir = f"{output_dir}/checkpoint_epoch_{epoch+1}"
-                    Path(final_output_dir).mkdir(parents=True, exist_ok=True)
-                    sentence_model.save(final_output_dir)
-
-        if local_rank == 0:
-            final_output_dir = f"{output_dir}/final"
-            Path(final_output_dir).mkdir(parents=True, exist_ok=True)
-            sentence_model.save(final_output_dir)
-
-
-# if __name__ == "__main__":
+    # load dataset with distributed sampler
+    train_dataset = create_train_dataset()
     
-#     setup_sentence_encoder_cfg = {
-#         "model_name": "microsoft/codebert-base",
-#         "model_type": "bi_encoder",
-#         "device": "cpu",  # Change to "cuda" if using GPU
-#         "is_evaluated": False
-#     }
-
-#     finetuning_encoder_cfg = {
-#         "train_batch_size": 256,
-#         "training_epoch": 40,
-#         "is_finetune_complete": False
-#     }
-
-#     train_sentence_encoder(setup_sentence_encoder_cfg=setup_sentence_encoder_cfg, finetuning_encoder_cfg=finetuning_encoder_cfg)
+    # set train loss function
+    train_loss = losses.MultipleNegativesRankingLoss(model=sentence_model)
+    
+    args = SentenceTransformerTrainingArguments(
+        output_dir=output_dir if rank == 0 else None,
+        per_device_train_batch_size=train_batch_size,
+        warmup_ratio=0.1,
+        fp16=True,
+        bf16=False,
+        batch_sampler=BatchSamplers.NO_DUPLICATES,
+        # Optional tracking/debugging parameters:
+        eval_strategy="steps",
+        save_strategy="steps",
+        save_steps=50,
+        eval_steps=50,
+        num_train_epochs=training_epoch,
+        max_steps=len(train_dataset) * training_epoch // (train_batch_size * world_size),
+        save_total_limit=10,
+        logging_steps=10,
+        logging_first_step=True,
+        run_name=f"batch_{train_batch_size}_finetune_sentence_encoder_on_{setup_sentence_encoder_cfg['model_name'].split('/')[-1]}",
+        # add distributed training settings
+        local_rank=local_rank,
+        world_size=world_size,
+        dataloader_pin_memory=True
+    )
+    
+    # Prepare callbacks - keep EarlyStopping and add TimeLimit
+    callbacks = [
+        EarlyStoppingCallback(early_stopping_patience=8, early_stopping_threshold=0.05)
+    ]
+    
+    # Add time limit callback if running under SLURM
+    if 'SLURM_JOB_TIME_LIMIT' in os.environ and rank == 0:
+        try:
+            # Parse SLURM time format (DD-HH:MM:SS)
+            time_str = os.environ['SLURM_JOB_TIME_LIMIT']
+            if '-' in time_str:
+                days, time_str = time_str.split('-')
+                days = int(days)
+            else:
+                days = 0
+            hours, minutes, seconds = map(int, time_str.split(':'))
+            total_seconds = days*86400 + hours*3600 + minutes*60 + seconds
+            
+            # Subtract 5 minutes as safety buffer
+            callbacks.append(TimeLimitCallback(total_seconds - 300, output_dir))
+        except Exception as e:
+            print(f"⚠️ Failed to parse SLURM time limit: {e}")
+            
+    
+    trainer = SentenceTransformerTrainer(
+        model=sentence_model,
+        args=args,
+        train_dataset=train_dataset,
+        loss=train_loss,
+        callbacks=callbacks
+    )
+    
+    trainer.train()
+    
+    if rank == 0:
+        final_output_dir = f"{output_dir}/final"
+        Path(final_output_dir).mkdir(parents=True, exist_ok=True)
+        sentence_model.save(final_output_dir)
