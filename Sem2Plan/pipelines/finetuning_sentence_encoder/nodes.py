@@ -128,8 +128,7 @@ def train_sentence_encoder(setup_sentence_encoder_cfg, finetuning_encoder_cfg):
         # add distributed training settings
         local_rank=local_rank,
         dataloader_pin_memory=True,
-        dataloader_drop_last=True,
-        gradient_checkpointing=True
+        dataloader_drop_last=True
     )
     
     # Prepare callbacks - keep EarlyStopping and add TimeLimit
