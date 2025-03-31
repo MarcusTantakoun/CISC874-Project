@@ -38,7 +38,7 @@ if __name__=="__main__":
     }
 
     finetuning_encoder_cfg = {
-        "train_batch_size": 64,
+        "train_batch_size": 32,
         "training_epoch": 40,
         "is_finetune_complete": False
     }

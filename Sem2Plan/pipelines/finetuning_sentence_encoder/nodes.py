@@ -127,7 +127,9 @@ def train_sentence_encoder(setup_sentence_encoder_cfg, finetuning_encoder_cfg):
         run_name=f"batch_{train_batch_size}_finetune_sentence_encoder_on_{setup_sentence_encoder_cfg['model_name'].split('/')[-1]}",
         # add distributed training settings
         local_rank=local_rank,
-        dataloader_pin_memory=True
+        dataloader_pin_memory=True,
+        dataloader_drop_last=True,
+        gradient_checkpointing=True
     )
     
     # Prepare callbacks - keep EarlyStopping and add TimeLimit
