@@ -116,10 +116,9 @@ def train_sentence_encoder(setup_sentence_encoder_cfg, finetuning_encoder_cfg):
         bf16=False,
         batch_sampler=BatchSamplers.NO_DUPLICATES,
         # Optional tracking/debugging parameters:
-        eval_strategy="steps",
+        eval_strategy="no",
         save_strategy="steps",
         save_steps=50,
-        eval_steps=50,
         num_train_epochs=training_epoch,
         max_steps=len(train_dataset) * training_epoch // (train_batch_size * torch.distributed.get_world_size()),
         save_total_limit=10,
