@@ -46,10 +46,4 @@ export WANDB_MODE=offline
 export HF_HUB_OFFLINE=1
 
 # Launch the training
-srun -c 8 \
-    -N 1 \
-    --mem=128000 \
-    --gres=gpu:1 \
-    bash -c '
-    python ./finetune.py
-    '
+python ./finetune.py
