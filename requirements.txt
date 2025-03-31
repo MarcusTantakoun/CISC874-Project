@@ -1,19 +1,18 @@
 # PDDL requirements
-# pddl
+pddl
 
 tabulate
 
 # Sentence Transformers
 sentence-transformers
 
-# torch
-# datasets~=2.20.0
-# transformers[torch]
+torch
+datasets~=2.20.0
+transformers[torch]
 
 # Utils 
 tqdm
 ipywidgets
-jupyterlab
 pandas
 einops
 matplotlib
