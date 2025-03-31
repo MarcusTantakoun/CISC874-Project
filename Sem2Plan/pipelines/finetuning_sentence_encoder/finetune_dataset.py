@@ -121,7 +121,6 @@ def create_train_dataset():
     data_dir = "data/02_intermediate_dataset/training"
     data_paths = glob(os.path.join(data_dir, "*jsonl"))
     train_dataset = load_dataset("json", data_files=data_paths, split="train")
-    print("Length of train dataset: ", len(train_dataset))
     return train_dataset
     
 
@@ -129,7 +128,6 @@ def create_test_dataset():
     data_dir = "data/02_intermediate_dataset/testing"
     data_paths = glob(os.path.join(data_dir, "*jsonl"))
     test_dataset = load_dataset("json", data_files=data_paths, split="train")
-    print("Length of test dataset: ", len(test_dataset))
     return test_dataset
     
     

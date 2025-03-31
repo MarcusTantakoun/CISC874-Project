@@ -121,14 +121,13 @@ def train_sentence_encoder(setup_sentence_encoder_cfg, finetuning_encoder_cfg):
         save_steps=50,
         eval_steps=50,
         num_train_epochs=training_epoch,
-        max_steps=len(train_dataset) * training_epoch // (train_batch_size * world_size),
+        max_steps=len(train_dataset) * training_epoch // (train_batch_size * torch.distributed.get_world_size()),
         save_total_limit=10,
         logging_steps=10,
         logging_first_step=True,
         run_name=f"batch_{train_batch_size}_finetune_sentence_encoder_on_{setup_sentence_encoder_cfg['model_name'].split('/')[-1]}",
         # add distributed training settings
         local_rank=local_rank,
-        world_size=world_size,
         dataloader_pin_memory=True
     )
     
