@@ -63,7 +63,7 @@ def train_sentence_encoder(setup_sentence_encoder_cfg, finetuning_encoder_cfg):
             output_dir=output_dir,
             per_device_train_batch_size=train_batch_size,
             warmup_ratio=0.1,
-            fp16=False,
+            fp16=True,
             bf16=False,
             num_train_epochs=training_epoch,
             max_steps=num_examples * training_epoch // train_batch_size,
