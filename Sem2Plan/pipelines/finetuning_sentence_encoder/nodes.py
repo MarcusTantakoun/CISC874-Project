@@ -13,7 +13,7 @@ from .finetune_dataset import create_train_dataset
 from ..setup_sentence_encoder.nodes import create_sentence_encoder_helper
 import time
 
-SLURM_JOB_TIME_LIMIT = 8 * 3600
+SLURM_JOB_TIME_LIMIT = 1200
 
 
 class EarlyStoppingCallback(TrainerCallback):
