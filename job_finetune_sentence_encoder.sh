@@ -10,18 +10,16 @@
 #SBATCH --error=./slurm_out/fine-tune-%j.err
 #SBATCH --account=rrg-zhu2048
 
-module --force purge
 module load StdEnv/2023
-module load gcc arrow/17.0.0
-ml cuda python/3.11
+ml cuda python/3.11 arrow/17.0.0
 
 pip install --upgrade pip --no-index
 
 virtualenv --no-download $SLURM_TMPDIR/env
 source $SLURM_TMPDIR/env/bin/activate
 
-pip install --no-index torch scikit_learn tqdm nltk torchtext transformers>=4.43.1 spacy triton accelerate datasets scipy matplotlib numpy==1.26.4 huggingface_hub ipython
 pip install sentence-transformers
+pip install --no-index torch scikit_learn tqdm nltk torchtext transformers>=4.43.1 spacy triton accelerate datasets scipy matplotlib numpy huggingface_hub ipython
 
 # Environment variables
 export MASTER_ADDR=$(hostname)
