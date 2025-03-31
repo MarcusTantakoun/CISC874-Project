@@ -12,14 +12,16 @@
 
 module --force purge
 module load StdEnv/2023
-ml cuda python/3.11 arrow/17.0.0
+module load gcc arrow/17.0.0
+ml cuda python/3.11
 
 pip install --upgrade pip --no-index
 
 virtualenv --no-download $SLURM_TMPDIR/env
 source $SLURM_TMPDIR/env/bin/activate
 
-pip install --no-index torch scikit_learn tqdm nltk torchtext transformers>=4.43.1 spacy triton accelerate datasets scipy matplotlib numpy==1.26.4 huggingface_hub ipython sentence-transformers
+pip install --no-index torch scikit_learn tqdm nltk torchtext transformers>=4.43.1 spacy triton accelerate datasets scipy matplotlib numpy==1.26.4 huggingface_hub ipython
+pip install sentence-transformers
 
 # Environment variables
 export MASTER_ADDR=$(hostname)
