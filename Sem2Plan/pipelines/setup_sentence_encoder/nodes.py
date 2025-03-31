@@ -11,7 +11,7 @@ def create_sentence_encoder_helper(setup_sentence_encoder_cfg):
     device = setup_sentence_encoder_cfg["device"]
 
     if model_type == "bi_encoder":
-        if model_name == "microsoft/codebert-base":
+        if model_name == "/home/tant2002/scratch/codebert-base":
             # Load CodeBERT as a Transformer model
             word_embedding_model = models.Transformer(model_name, max_seq_length=512)
 
