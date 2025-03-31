@@ -1,5 +1,4 @@
 from Sem2Plan.pipelines.finetuning_sentence_encoder.nodes import train_sentence_encoder
-import pkg_resources
 import os
 from datetime import datetime
 from pathlib import Path
@@ -18,9 +17,6 @@ if __name__=="__main__":
     # Write some content into the file
     with open(file_path, "w") as f:
         f.write("Training started...\n")
-
-    installed_packages = [pkg.key for pkg in pkg_resources.working_set]
-    print(installed_packages)
 
     setup_sentence_encoder_cfg = {
         "model_name": "/home/tant2002/scratch/codebert-base",
