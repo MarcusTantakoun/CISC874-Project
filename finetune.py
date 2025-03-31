@@ -7,10 +7,16 @@ from pathlib import Path
 
 if __name__ == "__main__":
     
-     # save path of model
+    # save path of model
     output_dir = os.path.join("data/03_models", f"finetuned_sentence_encoder_batch_test_{datetime.now().strftime('%Y-%m-%d_%H-%M-%S')}")
     print(f"Model will be saved at: {output_dir}")
     Path(output_dir).mkdir(parents=True, exist_ok=True)
+    
+    file_path = os.path.join(output_dir, "training_log.txt")
+
+    # Write some content into the file
+    with open(file_path, "w") as f:
+        f.write("Training started...\n")
 
     installed_packages = [pkg.key for pkg in pkg_resources.working_set]
     print(installed_packages)
