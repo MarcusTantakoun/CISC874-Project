@@ -18,9 +18,7 @@ pip install --upgrade pip --no-index
 virtualenv --no-download $SLURM_TMPDIR/env
 source $SLURM_TMPDIR/env/bin/activate
 
-pip install --no-index \
-  --find-links=/path/to/your/offline_packages \
-  sentence-transformers torch transformers
+pip install --no-index --find-links=./offline_packages sentence-transformers torch transformers pddl
 
 # Verify installation
 python -c "from sentence_transformers import SentenceTransformer; print('Success!')"
