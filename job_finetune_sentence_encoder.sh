@@ -55,4 +55,4 @@ torchrun \
     --rdzv_backend=c10d \
     --rdzv_id=${SLURM_JOB_ID} \
     --max_restarts=3 \
-    python ./finetune.py
+    $(which python) ./finetune.py
