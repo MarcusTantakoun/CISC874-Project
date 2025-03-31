@@ -19,6 +19,7 @@ virtualenv --no-download $SLURM_TMPDIR/env
 source $SLURM_TMPDIR/env/bin/activate
 
 pip install --no-index --find-links=./offline_packages sentence-transformers torch transformers pddl datasets tqdm tabulate
+pip install --no-index accelerate
 
 # Verify installation
 python -c "from sentence_transformers import SentenceTransformer; print('Success!')"
