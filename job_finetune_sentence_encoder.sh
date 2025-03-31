@@ -48,4 +48,7 @@ export WANDB_MODE=offline
 export HF_HUB_OFFLINE=1
 
 # Launch the training
-python ./finetune.py
+torchrun \
+  --nproc_per_node=4 \        # Matches --gres=gpu:4
+  --nnodes=1 \
+  ./finetune.py

@@ -12,6 +12,7 @@ from transformers import TrainerCallback
 from .finetune_dataset import create_train_dataset
 from ..setup_sentence_encoder.nodes import create_sentence_encoder_helper
 import time
+import torch
 
 SLURM_JOB_TIME_LIMIT = 1200
 
@@ -40,14 +41,16 @@ class EarlyStoppingCallback(TrainerCallback):
 
 def train_sentence_encoder(setup_sentence_encoder_cfg, finetuning_encoder_cfg):
     
+    local_rank = setup_sentence_encoder_cfg.get('local_rank', 0)
+    
     train_batch_size = finetuning_encoder_cfg['train_batch_size']
     training_epoch = finetuning_encoder_cfg['training_epoch']
-    is_finetune_complete = finetuning_encoder_cfg['is_finetune_complete']
+    # is_finetune_complete = finetuning_encoder_cfg['is_finetune_complete']
     
-    # define SentenceTransformer model
-    if not is_finetune_complete:
-        sentence_model = create_sentence_encoder_helper(setup_sentence_encoder_cfg)
-        
+    # Initialize model
+    sentence_model = create_sentence_encoder_helper(setup_sentence_encoder_cfg)
+    
+    if local_rank == 0:
         # save path of model
         output_dir = os.path.join("data/03_models", f"finetuned_sentence_encoder_batch_{train_batch_size}_{datetime.now().strftime('%Y-%m-%d_%H-%M-%S')}")
         print(f"Model will be saved at: {output_dir}")
@@ -55,22 +58,26 @@ def train_sentence_encoder(setup_sentence_encoder_cfg, finetuning_encoder_cfg):
         
         # load dataset
         train_dataset = create_train_dataset()
+        train_sampler = torch.utils.data.distributed.DistributedSampler(
+            train_dataset,
+            num_replicas=int(os.environ['WORLD_SIZE']),
+            rank=local_rank
+        )
 
         train_loss = losses.MultipleNegativesRankingLoss(model=sentence_model)
         
-        num_examples = len(train_dataset)
         args = SentenceTransformerTrainingArguments(
-            output_dir=output_dir,
+            output_dir=output_dir if local_rank == 0 else None,
             per_device_train_batch_size=train_batch_size,
             warmup_ratio=0.1,
             fp16=True,
             bf16=False,
             num_train_epochs=training_epoch,
-            max_steps=num_examples * training_epoch // train_batch_size,
+            max_steps=len(train_dataset) * training_epoch // (train_batch_size * int(os.environ['WORLD_SIZE'])),
             save_total_limit=10,
-            logging_steps=10,
-            logging_first_step=True,
-            run_name=f"batch_{train_batch_size}_finetune_sentence_encoder_on_{setup_sentence_encoder_cfg['model_name'].split('/')[-1]}"
+            logging_steps=10 if local_rank == 0 else 0,
+            logging_first_step=local_rank == 0,
+            run_name=f"batch_{train_batch_size}_finetune_sentence_encoder_on_{setup_sentence_encoder_cfg['model_name'].split('/')[-1]}" if local_rank == 0 else None
         )
 
         # set up the trainer
@@ -78,27 +85,30 @@ def train_sentence_encoder(setup_sentence_encoder_cfg, finetuning_encoder_cfg):
             model=sentence_model,
             args=args,
             train_dataset=train_dataset,
-            loss=train_loss
+            loss=train_loss,
+            sampler=train_sampler
         )
 
+        # Training loop
         start_time = time.time()
-        # train model and periodically save the model if near the timeout
         for epoch in range(training_epoch):
+            train_sampler.set_epoch(epoch)
             trainer.train()
-            # Check for remaining time in the SLURM job
-            elapsed_time = time.time() - start_time
-            remaining_time = max(0, (SLURM_JOB_TIME_LIMIT - elapsed_time))
-            print(f"Remaining time: {remaining_time} seconds")
+            
+            if local_rank == 0:
+                elapsed_time = time.time() - start_time
+                remaining_time = max(0, (SLURM_JOB_TIME_LIMIT - elapsed_time))
+                print(f"Remaining time: {remaining_time} seconds")
 
-            if remaining_time < 600:  # 10 minutes remaining
-                print("Time is running out, saving the model checkpoint...")
-                final_output_dir = f"{output_dir}/checkpoint_epoch_{epoch+1}"
-                Path(final_output_dir).mkdir(parents=True, exist_ok=True)
-                sentence_model.save(final_output_dir)
+                if remaining_time < 600:
+                    final_output_dir = f"{output_dir}/checkpoint_epoch_{epoch+1}"
+                    Path(final_output_dir).mkdir(parents=True, exist_ok=True)
+                    sentence_model.save(final_output_dir)
 
-        final_output_dir = f"{output_dir}/final"
-        Path(final_output_dir).mkdir(parents=True, exist_ok=True)
-        sentence_model.save(final_output_dir)
+        if local_rank == 0:
+            final_output_dir = f"{output_dir}/final"
+            Path(final_output_dir).mkdir(parents=True, exist_ok=True)
+            sentence_model.save(final_output_dir)
 
 
 # if __name__ == "__main__":

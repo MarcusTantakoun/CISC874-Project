@@ -1,18 +1,33 @@
 from Sem2Plan.pipelines.finetuning_sentence_encoder.nodes import train_sentence_encoder
+import os
+import torch.distributed as dist
+import torch
+
+def setup_distributed():
+    dist.init_process_group(backend='nccl')
+    local_rank = int(os.environ['LOCAL_RANK'])
+    torch.cuda.set_device(local_rank)
+    return local_rank
 
 if __name__=="__main__":
+    
+    local_rank = setup_distributed()
 
     setup_sentence_encoder_cfg = {
         "model_name": "/home/tant2002/scratch/codebert-base",
         "model_type": "bi_encoder",
-        "device": "cuda",  # Change to "cuda" if using GPU
-        "is_evaluated": False
+        "device": f"cuda:{local_rank}",  # Assign specific GPU
+        "is_evaluated": False,
+        "local_rank": local_rank  # Pass to training function
     }
 
     finetuning_encoder_cfg = {
-        "train_batch_size": 256,
+        "train_batch_size": 64,
         "training_epoch": 40,
         "is_finetune_complete": False
     }
+    
+    if local_rank == 0:
+        print(f"Starting training with config: {setup_sentence_encoder_cfg}")
 
     train_sentence_encoder(setup_sentence_encoder_cfg=setup_sentence_encoder_cfg, finetuning_encoder_cfg=finetuning_encoder_cfg)
