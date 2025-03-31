@@ -49,10 +49,10 @@ export HF_HUB_OFFLINE=1
 
 # Launch the training
 torchrun \
-    --nproc_per_node=${SLURM_GPUS_ON_NODE} \  # Automatically uses all 4 GPUs
+    --nproc_per_node=${SLURM_GPUS_ON_NODE} \
     --nnodes=1 \
     --rdzv_endpoint=${MASTER_ADDR}:${MASTER_PORT} \
     --rdzv_backend=c10d \
-    --rdzv_id=${SLURM_JOB_ID} \  # Unique ID for the job
-    --max_restarts=3 \           # Auto-recover from failures
-    ./finetune.py
+    --rdzv_id=${SLURM_JOB_ID} \
+    --max_restarts=3 \
+    python ./finetune.py
