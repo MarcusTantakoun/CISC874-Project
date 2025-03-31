@@ -54,5 +54,5 @@ torchrun \
     --rdzv_endpoint=${MASTER_ADDR}:${MASTER_PORT} \
     --rdzv_backend=c10d \
     --rdzv_id=${SLURM_JOB_ID} \
-    --max_restarts=3 \
+    --max_restarts=1 \
     ./finetune.py

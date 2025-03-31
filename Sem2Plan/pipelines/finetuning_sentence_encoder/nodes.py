@@ -79,8 +79,8 @@ def train_sentence_encoder(setup_sentence_encoder_cfg, finetuning_encoder_cfg):
     # Use assigned GPU
     torch.cuda.set_device(local_rank)
 
-    # Synchronize before training starts
-    dist.barrier()
+    # Ensure NCCL correctly maps ranks to GPUs
+    dist.barrier(device_ids=[local_rank])
 
     # Clear GPU cache
     with torch.cuda.device(local_rank):

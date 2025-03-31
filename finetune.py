@@ -15,13 +15,16 @@ def setup_distributed():
     # Explicitly set CUDA device
     torch.cuda.set_device(local_rank)
 
-    # Synchronize processes
-    dist.barrier()
+    # Ensure process group is initialized
+    if not dist.is_initialized():
+        dist.init_process_group(backend='nccl', init_method='env://', rank=rank, world_size=world_size)
+
+    # Explicitly perform barrier with assigned GPU
+    dist.barrier(device_ids=[local_rank])
 
     if rank == 0:
-        print(f"Distributed training initialized. World size: {world_size}, Local rank: {local_rank}")
+        print(f"Distributed training initialized. World size: {world_size}, Local rank: {local_rank}, Rank: {rank}")
 
-    return local_rank
 
 if __name__=="__main__":
     
