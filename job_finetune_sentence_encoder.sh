@@ -10,7 +10,7 @@
 #SBATCH --error=./slurm_out/fine-tune-%j.err
 #SBATCH --account=rrg-zhu2048
 
-module purge
+module --force purge
 module load StdEnv/2023
 ml cuda python/3.11 arrow/17.0.0
 
