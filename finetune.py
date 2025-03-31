@@ -1,7 +1,16 @@
 from Sem2Plan.pipelines.finetuning_sentence_encoder.nodes import train_sentence_encoder
 import pkg_resources
+import os
+from datetime import datetime
+from pathlib import Path
+
 
 if __name__ == "__main__":
+    
+     # save path of model
+    output_dir = os.path.join("data/03_models", f"finetuned_sentence_encoder_batch_test_{datetime.now().strftime('%Y-%m-%d_%H-%M-%S')}")
+    print(f"Model will be saved at: {output_dir}")
+    Path(output_dir).mkdir(parents=True, exist_ok=True)
 
     installed_packages = [pkg.key for pkg in pkg_resources.working_set]
     print(installed_packages)
