@@ -5,7 +5,7 @@
 #SBATCH --cpus-per-task=32            # Number of CPU cores per task
 #SBATCH --gres=gpu:4                  # Number of GPUs per node
 #SBATCH --mem=128000M
-#SBATCH --time=0-0:20:00               # Maximum execution time (HH:MM:SS)
+#SBATCH --time=0-8:00:00               # Maximum execution time (HH:MM:SS)
 #SBATCH --output=./slurm_out/fine-tune-%j.out            
 #SBATCH --error=./slurm_out/fine-tune-%j.err
 #SBATCH --account=rrg-zhu2048

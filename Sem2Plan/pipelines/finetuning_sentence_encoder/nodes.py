@@ -15,8 +15,6 @@ import time
 import torch
 import torch.distributed as dist
 
-SLURM_JOB_TIME_LIMIT = 1200
-
 class TimeLimitCallback(TrainerCallback):
     """Saves checkpoint when <10 minutes remain in SLURM job"""
     def __init__(self, time_limit_seconds, output_dir):
