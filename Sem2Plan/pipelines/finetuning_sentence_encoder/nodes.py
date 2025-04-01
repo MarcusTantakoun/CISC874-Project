@@ -164,6 +164,12 @@ def train_sentence_encoder(setup_sentence_encoder_cfg, finetuning_encoder_cfg):
     trainer.train()
     
     if rank == 0:
+        total_samples = len(train_dataset) * training_epoch
+        total_batches = total_samples // (train_batch_size * world_size)
+        
+        print(f"\n✅ Training completed. Processed {total_samples} samples across {training_epoch} epochs.")
+        print(f"Total batches: {total_batches} (batch size: {train_batch_size}, world size: {world_size})")
+        
         final_output_dir = f"{output_dir}/final"
         Path(final_output_dir).mkdir(parents=True, exist_ok=True)
         sentence_model.save(final_output_dir)

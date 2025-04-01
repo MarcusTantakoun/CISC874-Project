@@ -31,7 +31,7 @@ if __name__=="__main__":
     local_rank = setup_distributed()
 
     setup_sentence_encoder_cfg = {
-        "model_name": "/home/tant2002/scratch/codebert-base",
+        "model_name": "/home/tant2002/scratch/all-roberta-large-v1",
         "model_type": "bi_encoder",
         "is_evaluated": False,
         "local_rank": local_rank  # Pass to training function

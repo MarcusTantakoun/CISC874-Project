@@ -22,7 +22,7 @@ def create_sentence_encoder_helper(setup_sentence_encoder_cfg):
             # Wrap CodeBERT as a SentenceTransformer model
             model = SentenceTransformer(modules=[word_embedding_model, pooling_model])
 
-        elif model_name == "all-roberta-large-v1":
+        elif model_name == "/home/tant2002/scratch/all-roberta-large-v1":
             # Load RoBERTa-large as a prebuilt SentenceTransformer model
             model = SentenceTransformer(model_name)
 
