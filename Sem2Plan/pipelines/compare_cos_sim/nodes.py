@@ -2,11 +2,10 @@ from sentence_transformers import SentenceTransformer, util
 from sklearn.metrics import precision_score, recall_score, f1_score, accuracy_score
 import matplotlib.pyplot as plt
 from ..finetuning_sentence_encoder.finetune_dataset import create_test_dataset
+import os
 
 
-model = SentenceTransformer("all-roberta-large-v1")
-
-def compute_similarity(test_data):
+def compute_similarity(test_data, model):
     results = []
     
     for item in test_data:
@@ -35,6 +34,8 @@ def compute_similarity(test_data):
             "max_negative_score": max_neg_score,
             "correct": is_correct
         })
+
+        print(results)
         
     return results
 
@@ -67,8 +68,12 @@ def plot_similarity_scores(results):
     
 
 if __name__ == "__main__":
+
+    model_name = "sentence-transformers/all-roberta-large-v1"
+    model = SentenceTransformer(model_name)
+
     test_data = create_test_dataset()
-    similarity_results = compute_similarity(test_data)
+    similarity_results = compute_similarity(test_data, model=model)
     metrics = evaluate_model(similarity_results)
     plot_similarity_scores(similarity_results)
     
