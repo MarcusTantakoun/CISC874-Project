@@ -176,3 +176,4 @@ cython_debug/
 data/02_intermediate_dataset/training
 data/02_intermediate_dataset/testing
 offline_packages
+data/03_models/*

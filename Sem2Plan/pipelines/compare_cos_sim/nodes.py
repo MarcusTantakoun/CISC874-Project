@@ -69,7 +69,7 @@ def plot_similarity_scores(results):
 
 if __name__ == "__main__":
 
-    model_name = "sentence-transformers/all-roberta-large-v1"
+    model_name = "data/03_models/codebert-base-trained"
     model = SentenceTransformer(model_name)
 
     test_data = create_test_dataset()
