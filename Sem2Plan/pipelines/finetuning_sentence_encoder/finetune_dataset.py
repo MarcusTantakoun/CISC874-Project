@@ -127,7 +127,7 @@ def create_train_dataset():
 def create_test_dataset():
     data_dir = "data/02_intermediate_dataset/testing"
     data_paths = glob(os.path.join(data_dir, "*jsonl"))
-    test_dataset = load_dataset("json", data_files=data_paths, split="train")
+    test_dataset = load_dataset("json", data_files=data_paths, split="test")
     
     # Shuffle the dataset
     train_dataset = train_dataset.shuffle(seed=42)
