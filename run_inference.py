@@ -6,7 +6,8 @@ import gc
 import torch
 
 if __name__ == "__main__":
-    test_data = create_test_dataset()
+    test_data = list(create_test_dataset())  # Fix here if needed
+
     device = "cuda" if torch.cuda.is_available() else "cpu"
 
     model_paths = [
@@ -27,6 +28,7 @@ if __name__ == "__main__":
         results = compute_similarity(test_data=test_data, model=model, device=device)
         metrics = evaluate_model(results)
         save_metrics(metrics, f"data/04_results/{model_type}", "evaluation_metrics.txt")
+        print(f"Finished testing: {model_type}")
         print(f"Evaluation Metrics ({model_type}):", metrics)
 
         del model
