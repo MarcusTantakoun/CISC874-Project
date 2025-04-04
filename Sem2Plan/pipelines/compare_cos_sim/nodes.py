@@ -1,5 +1,5 @@
 from sentence_transformers import SentenceTransformer, util
-from sklearn.metrics import precision_score, recall_score, f1_score, accuracy_score
+from sklearn.metrics import accuracy_score
 import matplotlib.pyplot as plt
 from ..finetuning_sentence_encoder.finetune_dataset import create_test_dataset
 import os
@@ -8,9 +8,52 @@ import gc
 import torch
 
 
-def compute_similarity(test_data, model):
+def compute_similarity(test_data, model, batch_size=32, device='cuda'):
     results = []
 
+    model.to(device)
+    model.eval()
+
+    with torch.no_grad():
+        for start_idx in range(0, len(test_data), batch_size):
+            batch = test_data[start_idx: start_idx + batch_size]
+
+            anchors = [item["anchor"] for item in batch]
+            positives = [item["positive"] for item in batch]
+            negatives = [item["negatives"] for item in batch]
+
+            # flatten list of negatives for batch processing
+            flat_negatives = [neg for sublist in negatives for neg in sublist]
+
+            # encode all texts
+            anchor_embeddings = model.encode(anchors, convert_to_tensor=True, device=device)
+            positive_embeddings = model.encode(positives, convert_to_tensor=True, device=device)
+            negative_embeddings = model.encode(flat_negatives, convert_to_tensor=True, device=device)
+
+            # reshape negatives to match original shape
+            negative_embeddings = negative_embeddings.view(len(batch), -1, negative_embeddings.shape[-1])
+
+            for i in range(len(batch)):
+                pos_score = util.pytorch_cos_sim(anchor_embeddings[i], positive_embeddings[i]).item()
+                neg_scores = util.pytorch_cos_sim(anchor_embeddings[i], negative_embeddings[i]).squeeze().tolist()
+
+                all_scores = [(pos_score, "positive")] + [(score, "negative") for score in neg_scores]
+                all_scores.sort(reverse=True, key=lambda x: x[0])
+                positive_rank = next(j for j, (_, label) in enumerate(all_scores) if label == "positive") + 1
+
+                results.append({
+                    "anchor": anchors[i],
+                    "positive_score": pos_score,
+                    "negative_scores": neg_scores,
+                    "positive_rank": positive_rank,
+                    "correct": positive_rank == 1
+                })
+
+    return results
+            
+
+def compute_similarity_01(test_data, model):
+    results = []
     max_samples = len(test_data)
 
     for i, item in enumerate(test_data):
@@ -101,57 +144,57 @@ def save_metrics(metrics, results_pth, filename):
             f.write(f"{metric}: {value}\n")
     
 
-if __name__ == "__main__":
+# if __name__ == "__main__":
 
-    # model_name = "data/03_models/codebert-base-trained"
-    # model = SentenceTransformer(model_name)
-    # model_type = "codebert-base-trained"
-    # results_pth = f"data/04_results/{model_type}"
-    # test_data = create_test_dataset()
-    # similarity_results = compute_similarity(test_data, model=model)
-    # metrics = evaluate_model(similarity_results)
-    # save_metrics(metrics, results_pth, filename=f"evaluation_metrics.txt")
-    # print("Evaluation Metrics:", metrics)
+#     # model_name = "data/03_models/codebert-base-trained"
+#     # model = SentenceTransformer(model_name)
+#     # model_type = "codebert-base-trained"
+#     # results_pth = f"data/04_results/{model_type}"
+#     # test_data = create_test_dataset()
+#     # similarity_results = compute_similarity(test_data, model=model)
+#     # metrics = evaluate_model(similarity_results)
+#     # save_metrics(metrics, results_pth, filename=f"evaluation_metrics.txt")
+#     # print("Evaluation Metrics:", metrics)
 
-    # del model
-    # gc.collect()
-    # torch.cuda.empty_cache()
+#     # del model
+#     # gc.collect()
+#     # torch.cuda.empty_cache()
 
-    # model_name = "microsoft/codebert-base"
-    # model = SentenceTransformer(model_name)
-    # model_type = "codebert-base"
-    # results_pth = f"data/04_results/{model_type}"
-    # test_data = create_test_dataset()
-    # similarity_results = compute_similarity(test_data, model=model)
-    # metrics = evaluate_model(similarity_results)
-    # save_metrics(metrics, results_pth, filename=f"evaluation_metrics.txt")
-    # print("Evaluation Metrics:", metrics)
+#     # model_name = "microsoft/codebert-base"
+#     # model = SentenceTransformer(model_name)
+#     # model_type = "codebert-base"
+#     # results_pth = f"data/04_results/{model_type}"
+#     # test_data = create_test_dataset()
+#     # similarity_results = compute_similarity(test_data, model=model)
+#     # metrics = evaluate_model(similarity_results)
+#     # save_metrics(metrics, results_pth, filename=f"evaluation_metrics.txt")
+#     # print("Evaluation Metrics:", metrics)
 
-    # del model
-    # gc.collect()
-    # torch.cuda.empty_cache()
+#     # del model
+#     # gc.collect()
+#     # torch.cuda.empty_cache()
     
-    model_name = "data/03_models/all-roberta-large-v1-trained"
-    model = SentenceTransformer(model_name)
-    model_type = "all-roberta-large-v1-trained-attempt-2"
-    results_pth = f"data/04_results/{model_type}"
-    test_data = create_test_dataset()
-    similarity_results = compute_similarity(test_data=test_data, model=model)
-    metrics = evaluate_model(similarity_results)
-    save_metrics(metrics, results_pth, filename=f"evaluation_metrics.txt")
-    print("Evaluation Metrics:", metrics)
+#     model_name = "data/03_models/all-roberta-large-v1-trained"
+#     model = SentenceTransformer(model_name)
+#     model_type = "all-roberta-large-v1-trained-attempt-2"
+#     results_pth = f"data/04_results/{model_type}"
+#     test_data = create_test_dataset()
+#     similarity_results = compute_similarity(test_data=test_data, model=model)
+#     metrics = evaluate_model(similarity_results)
+#     save_metrics(metrics, results_pth, filename=f"evaluation_metrics.txt")
+#     print("Evaluation Metrics:", metrics)
 
-    del model
-    gc.collect()
-    torch.cuda.empty_cache()
+#     del model
+#     gc.collect()
+#     torch.cuda.empty_cache()
 
-    model_name = "sentence-transformers/all-roberta-large-v1"
-    model = SentenceTransformer(model_name)
-    model_type = "all-roberta-large-v1-attempt-2"
-    results_pth = f"data/04_results/{model_type}"
-    test_data = create_test_dataset()
-    similarity_results = compute_similarity(test_data=test_data, model=model)
-    metrics = evaluate_model(similarity_results)
-    save_metrics(metrics, results_pth, filename=f"evaluation_metrics.txt")
-    print("Evaluation Metrics:", metrics)
+#     model_name = "sentence-transformers/all-roberta-large-v1"
+#     model = SentenceTransformer(model_name)
+#     model_type = "all-roberta-large-v1-attempt-2"
+#     results_pth = f"data/04_results/{model_type}"
+#     test_data = create_test_dataset()
+#     similarity_results = compute_similarity(test_data=test_data, model=model)
+#     metrics = evaluate_model(similarity_results)
+#     save_metrics(metrics, results_pth, filename=f"evaluation_metrics.txt")
+#     print("Evaluation Metrics:", metrics)
     

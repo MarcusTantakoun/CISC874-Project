@@ -1,13 +1,13 @@
 #!/bin/bash
-#SBATCH --job-name=train_sentence_encoder        # Job name
-#SBATCH --nodes=1                     # Number of nodes
-#SBATCH --ntasks-per-node=1           # Number of tasks per node
-#SBATCH --cpus-per-task=32            # Number of CPU cores per task
-#SBATCH --gres=gpu:1                  # Number of GPUs per node
-#SBATCH --mem=128000M
-#SBATCH --time=0-0:20:00               # Maximum execution time (HH:MM:SS)
-#SBATCH --output=./slurm_out/generate_dataset-%j.out            
-#SBATCH --error=./slurm_out/generate_dataset-%j.err
+#SBATCH --job-name=inference_sentence_encoder
+#SBATCH --nodes=1
+#SBATCH --ntasks-per-node=1
+#SBATCH --cpus-per-task=16
+#SBATCH --gres=gpu:1
+#SBATCH --mem=64000M
+#SBATCH --time=0-2:00:00
+#SBATCH --output=./slurm_out/infer-%j.out
+#SBATCH --error=./slurm_out/infer-%j.err
 #SBATCH --account=rrg-zhu2048
 
 module load StdEnv/2023
@@ -18,8 +18,11 @@ pip install --upgrade pip --no-index
 virtualenv --no-download $SLURM_TMPDIR/env
 source $SLURM_TMPDIR/env/bin/activate
 
+pip install --no-index --find-links=./offline_packages sentence-transformers torch transformers pddl datasets tqdm tabulate
+pip install --no-index accelerate scikit_learn
 
-pip install --no-index torch scikit_learn tqdm nltk torchtext transformers>=4.43.1 spacy triton accelerate datasets scipy matplotlib numpy huggingface_hub ipython pddl tabulate sentence-transformers
+# Verify installation
+python -c "from sentence_transformers import SentenceTransformer; print('Success!')"
 
 # Environment variables
 export MASTER_ADDR=$(hostname)
@@ -44,4 +47,5 @@ export NCCL_SOCKET_IFNAME="eno8303,ib0"
 export WANDB_MODE=offline
 export HF_HUB_OFFLINE=1
 
-python Sem2Plan/pipelines/finetuning_sentence_encoder/finetune_dataset.py
+echo "Running inference..."
+python ./run_inference.py
