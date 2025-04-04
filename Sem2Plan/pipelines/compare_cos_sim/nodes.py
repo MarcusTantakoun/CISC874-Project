@@ -3,80 +3,155 @@ from sklearn.metrics import precision_score, recall_score, f1_score, accuracy_sc
 import matplotlib.pyplot as plt
 from ..finetuning_sentence_encoder.finetune_dataset import create_test_dataset
 import os
+import numpy as np
+import gc
+import torch
 
 
 def compute_similarity(test_data, model):
     results = []
-    
-    for item in test_data:
+
+    max_samples = len(test_data)
+
+    for i, item in enumerate(test_data):
+        if i >= max_samples:
+            break
+        print("Iteration:", i)
+
         anchor = item["anchor"]
         positive = item["positive"]
         negatives = item["negatives"]
         
-        # ecode anchor and PDDL candidates
+        # Encode anchor and PDDL candidates
         anchor_embedding = model.encode(anchor, convert_to_tensor=True)
         positive_embedding = model.encode(positive, convert_to_tensor=True)
         negative_embeddings = model.encode(negatives, convert_to_tensor=True)
         
-        # compute cosine similarities
+        # Compute cosine similarities
         pos_score = util.pytorch_cos_sim(anchor_embedding, positive_embedding).item()
-        neg_scores = util.pytorch_cos_sim(anchor_embedding, negative_embeddings).squeeze(0)
-        
-        # find highest similarity score among negatives
-        max_neg_score = neg_scores.max().item()
-        
-        # determine correctness
-        is_correct = pos_score > max_neg_score
-        
+        neg_scores = util.pytorch_cos_sim(anchor_embedding, negative_embeddings).squeeze().tolist()
+
+        # Combine scores and rank them
+        all_scores = [(pos_score, "positive")] + [(score, "negative") for score in neg_scores]
+        all_scores.sort(reverse=True, key=lambda x: x[0])  # Sort by similarity in descending order
+
+        # Find rank of the correct (positive) example (1-based index)
+        positive_rank = next(i for i, (_, label) in enumerate(all_scores) if label == "positive") + 1
+
+        # Store results
         results.append({
             "anchor": anchor,
             "positive_score": pos_score,
-            "max_negative_score": max_neg_score,
-            "correct": is_correct
+            "negative_scores": neg_scores,
+            "positive_rank": positive_rank,
+            "correct": positive_rank == 1  # Correct if positive is ranked first
         })
 
-        print(results)
-        
     return results
 
-def evaluate_model(results):
-    y_true = [1] * len(results) # all true cases are positive examples
-    y_pred = [1 if item["correct"] else 0 for item in results] # model predictions
-    
-    precision = precision_score(y_true, y_pred)
-    recall = recall_score(y_true, y_pred)
-    f1 = f1_score(y_true, y_pred)
+def evaluate_model(results, k=3):
+    """
+    Evaluates the model using Precision, Recall, F1-score, Accuracy, Precision@K, and MRR.
+    """
+    # Standard classification metrics
+    y_true = [1] * len(results)
+    y_pred = [1 if item["correct"] else 0 for item in results]
+
+    # precision = precision_score(y_true, y_pred, zero_division=0)
+    # recall = recall_score(y_true, y_pred, zero_division=0)
+    # f1 = f1_score(y_true, y_pred, zero_division=0)
     accuracy = accuracy_score(y_true, y_pred)
-    
-    return {"precision": precision, "recall": recall, "f1_score": f1, "accuracy": accuracy}
+
+    # Precision@K (is the correct answer in the top K?)
+    precision_at_k = np.mean([1 if item["positive_rank"] <= k else 0 for item in results])
+
+    # Mean Reciprocal Rank (MRR)
+    mrr = np.mean([1.0 / item["positive_rank"] for item in results])
+
+    return {
+        "accuracy": accuracy,
+        f"precision@{k}": precision_at_k,
+        "mrr": mrr,
+    }
 
 
-def plot_similarity_scores(results):
-    anchors = [item["anchor"][:50] + "..." for item in results]
-    pos_scores = [item["positive_score"] for item in results]
-    neg_scores = [item["max_negative_score"] for item in results]
+# def plot_similarity_scores(results, plot_filename):
+#     anchors = [item["anchor"][:50] + "..." for item in results]
+#     pos_scores = [item["positive_score"] for item in results]
+#     neg_scores = [item["max_negative_score"] for item in results]
     
-    plt.plot(anchors, pos_scores, marker="o", linestyle="-", label="Positive Scores", color="blue")
-    plt.plot(anchors, neg_scores, marker="x", linestyle="--", label="Max Negative Scores", color="red")
+#     plt.plot(anchors, pos_scores, marker="o", linestyle="-", label="Positive Scores", color="blue")
+#     plt.plot(anchors, neg_scores, marker="x", linestyle="--", label="Max Negative Scores", color="red")
     
-    plt.xlabel("Test Cases")
-    plt.ylabel("Similarity Score")
-    plt.xticks(rotation=90)
-    plt.title("Positive vs. Negative Similarity Scores")
-    plt.legend()
-    plt.show()
+#     plt.xlabel("Test Cases")
+#     plt.ylabel("Similarity Score")
+#     plt.xticks(rotation=90)
+#     plt.title("Positive vs. Negative Similarity Scores")
+#     plt.legend()
+    
+#     plt.tight_layout()
+#     plt.savefig(plot_filename)
+#     plt.close()
+
+
+def save_metrics(metrics, results_pth, filename):
+    os.makedirs(results_pth, exist_ok=True)
+    with open(os.path.join(results_pth, filename), "w") as f:
+         for metric, value in metrics.items():
+            f.write(f"{metric}: {value}\n")
     
 
 if __name__ == "__main__":
 
-    model_name = "data/03_models/codebert-base-trained"
-    model = SentenceTransformer(model_name)
+    # model_name = "data/03_models/codebert-base-trained"
+    # model = SentenceTransformer(model_name)
+    # model_type = "codebert-base-trained"
+    # results_pth = f"data/04_results/{model_type}"
+    # test_data = create_test_dataset()
+    # similarity_results = compute_similarity(test_data, model=model)
+    # metrics = evaluate_model(similarity_results)
+    # save_metrics(metrics, results_pth, filename=f"evaluation_metrics.txt")
+    # print("Evaluation Metrics:", metrics)
 
+    # del model
+    # gc.collect()
+    # torch.cuda.empty_cache()
+
+    # model_name = "microsoft/codebert-base"
+    # model = SentenceTransformer(model_name)
+    # model_type = "codebert-base"
+    # results_pth = f"data/04_results/{model_type}"
+    # test_data = create_test_dataset()
+    # similarity_results = compute_similarity(test_data, model=model)
+    # metrics = evaluate_model(similarity_results)
+    # save_metrics(metrics, results_pth, filename=f"evaluation_metrics.txt")
+    # print("Evaluation Metrics:", metrics)
+
+    # del model
+    # gc.collect()
+    # torch.cuda.empty_cache()
+    
+    model_name = "data/03_models/all-roberta-large-v1-trained"
+    model = SentenceTransformer(model_name)
+    model_type = "all-roberta-large-v1-trained-attempt-2"
+    results_pth = f"data/04_results/{model_type}"
     test_data = create_test_dataset()
-    similarity_results = compute_similarity(test_data, model=model)
+    similarity_results = compute_similarity(test_data=test_data, model=model)
     metrics = evaluate_model(similarity_results)
-    plot_similarity_scores(similarity_results)
-    
+    save_metrics(metrics, results_pth, filename=f"evaluation_metrics.txt")
     print("Evaluation Metrics:", metrics)
-    
+
+    del model
+    gc.collect()
+    torch.cuda.empty_cache()
+
+    model_name = "sentence-transformers/all-roberta-large-v1"
+    model = SentenceTransformer(model_name)
+    model_type = "all-roberta-large-v1-attempt-2"
+    results_pth = f"data/04_results/{model_type}"
+    test_data = create_test_dataset()
+    similarity_results = compute_similarity(test_data=test_data, model=model)
+    metrics = evaluate_model(similarity_results)
+    save_metrics(metrics, results_pth, filename=f"evaluation_metrics.txt")
+    print("Evaluation Metrics:", metrics)
     

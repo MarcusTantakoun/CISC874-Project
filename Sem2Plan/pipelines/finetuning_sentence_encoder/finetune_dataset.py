@@ -131,6 +131,8 @@ def create_test_dataset():
     # Load all JSONL files and specify "test" split
     test_dataset = load_dataset("json", data_files={"test": data_paths})["test"]
 
+    test_dataset = test_dataset.shuffle(seed=42)
+
     return test_dataset
     
     
@@ -164,7 +166,7 @@ def generate_dataset(data_path, save_path, total_num_examples = 1.0e5, chunksize
             pbar.update(1)
             if len(output_list) == chunksize:
                 # save jsonl file
-                with open(os.path.join(save_dir, f"train_data_{file_id}.jsonl"), 'w') as f:
+                with open(os.path.join(save_dir, f"test_data_{file_id}.jsonl"), 'w') as f:
                     f.write("\n".join(output_list))
                 file_id += 1
                 output_list = []
@@ -172,13 +174,13 @@ def generate_dataset(data_path, save_path, total_num_examples = 1.0e5, chunksize
         # shuffle the dataset after each epoch
         train_dataset.shuffle()
     # save last chunk
-    with open(os.path.join(save_dir, f"train_data_{file_id}.jsonl"), 'w') as f:
+    with open(os.path.join(save_dir, f"test_data_{file_id}.jsonl"), 'w') as f:
         f.write("\n".join(output_list))
     pbar.close()
     
     
 if __name__ == "__main__":
-    generate_dataset(data_path="data/01_raw_dataset/training/", save_path="data/02_intermediate_dataset/training/")
+    # generate_dataset(data_path="data/01_raw_dataset/training/", save_path="data/02_intermediate_dataset/training/")
     generate_dataset(data_path="data/01_raw_dataset/testing/", save_path="data/02_intermediate_dataset/testing/")
 
 
