@@ -2,10 +2,10 @@
 #SBATCH --job-name=inference_sentence_encoder
 #SBATCH --nodes=1
 #SBATCH --ntasks-per-node=1
-#SBATCH --cpus-per-task=16
+#SBATCH --cpus-per-task=32
 #SBATCH --gres=gpu:1
-#SBATCH --mem=64000M
-#SBATCH --time=0-2:00:00
+#SBATCH --mem=128000M
+#SBATCH --time=0-8:00:00
 #SBATCH --output=./slurm_out/infer-%j.out
 #SBATCH --error=./slurm_out/infer-%j.err
 #SBATCH --account=rrg-zhu2048

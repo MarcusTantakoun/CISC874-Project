@@ -8,7 +8,7 @@ import gc
 import torch
 
 
-def compute_similarity(test_data, model, batch_size=32, device='cuda'):
+def compute_similarity(test_data, model, batch_size=64, device='cuda'):
     results = []
 
     model.to(device)
