@@ -1,3 +1,11 @@
+1000 iterations
+
 accuracy: 0.0
 precision@3: 0.003
 mrr: 0.11654455266955267
+
+full 20,000 iterations:
+
+accuracy: 0.00045
+precision@3: 0.00805
+mrr: 0.11882023809523809
