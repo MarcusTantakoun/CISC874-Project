@@ -1,5 +1,5 @@
 """
-This module generates the PDDL task files
+This module contains classes that generates PDDL problems
 """
 
 import os, argparse, hashlib, tempfile
@@ -532,16 +532,16 @@ class MiniGrid(Domain):
     # b = Barman()
     # b.generate_problem(dataset_dir="data/01_raw_dataset/training/barman", args=args)
     
-    # # BLOCKSWORLD
-    # parser = argparse.ArgumentParser(description="Blocksworld Problem Generator")
-    # parser.add_argument("--name", type=str, default="blocksworld")
-    # parser.add_argument("--ops", type=int, default=4)
-    # parser.add_argument("--blocks", type=int, default=10)
-    # parser.add_argument("--max_iterations", type=int, default=100)
-    # args = parser.parse_args()
+    # BLOCKSWORLD
+    parser = argparse.ArgumentParser(description="Blocksworld Problem Generator")
+    parser.add_argument("--name", type=str, default="blocksworld")
+    parser.add_argument("--ops", type=int, default=4)
+    parser.add_argument("--blocks", type=int, default=10)
+    parser.add_argument("--max_iterations", type=int, default=3)
+    args = parser.parse_args()
 
-    # b = Blocksworld()
-    # b.generate_problem(dataset_dir="data/01_raw_dataset/training/blocksworld", args=args)
+    b = Blocksworld()
+    b.generate_problem(dataset_dir="data/05_demonstration/blocksworld", args=args)
         
     # # FLOORTILE
     # parser = argparse.ArgumentParser(description="Floortile Problem Generator")

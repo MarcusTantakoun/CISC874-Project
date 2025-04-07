@@ -17,11 +17,6 @@ if __name__ == "__main__":
         ("/home/tant2002/scratch/all-roberta-large-v1", "all-roberta-large-v1")
     ]
 
-    # codeBERT-trained: /home/tant2002/projects/def-zhu2048/tant2002/CISC874-Project/data/03_models/finetuned_sentence_encoder_batch_32_2025-03-31_21-27-32/final
-    # codeBERT: /home/tant2002/scratch/codebert-base
-    # all-RoBERTa-trained: /home/tant2002/projects/def-zhu2048/tant2002/CISC874-Project/data/03_models/finetuned_sentence_encoder_batch_32_2025-04-01_01-15-09/final
-    # all-RoBERTa-large-v1: /home/tant2002/scratch/all-roberta-large-v1
-
     for model_path, model_type in model_paths:
         print(f"Running inference for {model_type}")
         model = SentenceTransformer(model_path)

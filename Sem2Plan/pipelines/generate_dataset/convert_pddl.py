@@ -92,7 +92,7 @@ class Blocksworld(Domain):
 
             goals = get_goals(task)
             for goal in goals:
-                description += f"{goal.terms[0].name} should be on top of {goal.terms[1].name}. \n"            
+                description += f"{goal.terms[0].name} should be on top of {goal.terms[1].name}. \n"     
 
             write_anchor_files(problem_file, description)
 
@@ -650,7 +650,10 @@ class MiniGrid(Domain):
             write_anchor_files(problem_file, description)
 
 
-# if __name__ == "__main__":
+if __name__ == "__main__":
+    b = Blocksworld()
+    b.convert_pddl_to_nl("data/05_demonstration/blocksworld")
+
     # b = Blocksworld()
     # b.convert_pddl_to_nl("data/01_raw_dataset/training/blocksworld")
     

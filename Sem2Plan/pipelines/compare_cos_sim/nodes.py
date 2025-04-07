@@ -1,10 +1,8 @@
 from sentence_transformers import SentenceTransformer, util
 from sklearn.metrics import accuracy_score
-import matplotlib.pyplot as plt
 from ..finetuning_sentence_encoder.finetune_dataset import create_test_dataset
 import os
 import numpy as np
-import gc
 import torch
 
 
@@ -52,9 +50,9 @@ def compute_similarity(test_data, model, batch_size=64, device='cuda'):
     return results
             
 
-def compute_similarity_01(test_data, model):
+def compute_similarity_01(test_data, model, num_samples=10):
     results = []
-    max_samples = len(test_data)
+    max_samples = num_samples
 
     for i, item in enumerate(test_data):
         if i >= max_samples:
@@ -118,25 +116,6 @@ def evaluate_model(results, k=3):
     }
 
 
-# def plot_similarity_scores(results, plot_filename):
-#     anchors = [item["anchor"][:50] + "..." for item in results]
-#     pos_scores = [item["positive_score"] for item in results]
-#     neg_scores = [item["max_negative_score"] for item in results]
-    
-#     plt.plot(anchors, pos_scores, marker="o", linestyle="-", label="Positive Scores", color="blue")
-#     plt.plot(anchors, neg_scores, marker="x", linestyle="--", label="Max Negative Scores", color="red")
-    
-#     plt.xlabel("Test Cases")
-#     plt.ylabel("Similarity Score")
-#     plt.xticks(rotation=90)
-#     plt.title("Positive vs. Negative Similarity Scores")
-#     plt.legend()
-    
-#     plt.tight_layout()
-#     plt.savefig(plot_filename)
-#     plt.close()
-
-
 def save_metrics(metrics, results_pth, filename):
     os.makedirs(results_pth, exist_ok=True)
     with open(os.path.join(results_pth, filename), "w") as f:
@@ -144,57 +123,13 @@ def save_metrics(metrics, results_pth, filename):
             f.write(f"{metric}: {value}\n")
     
 
-# if __name__ == "__main__":
+if __name__ == "__main__":
 
-#     # model_name = "data/03_models/codebert-base-trained"
-#     # model = SentenceTransformer(model_name)
-#     # model_type = "codebert-base-trained"
-#     # results_pth = f"data/04_results/{model_type}"
-#     # test_data = create_test_dataset()
-#     # similarity_results = compute_similarity(test_data, model=model)
-#     # metrics = evaluate_model(similarity_results)
-#     # save_metrics(metrics, results_pth, filename=f"evaluation_metrics.txt")
-#     # print("Evaluation Metrics:", metrics)
+    model_path = "data/03_models/codebert-base-trained"
+    test_data = create_test_dataset()
 
-#     # del model
-#     # gc.collect()
-#     # torch.cuda.empty_cache()
+    model = SentenceTransformer(model_path)
+    results = compute_similarity_01(test_data=test_data, model=model, num_samples=20)
+    metrics = evaluate_model(results)
 
-#     # model_name = "microsoft/codebert-base"
-#     # model = SentenceTransformer(model_name)
-#     # model_type = "codebert-base"
-#     # results_pth = f"data/04_results/{model_type}"
-#     # test_data = create_test_dataset()
-#     # similarity_results = compute_similarity(test_data, model=model)
-#     # metrics = evaluate_model(similarity_results)
-#     # save_metrics(metrics, results_pth, filename=f"evaluation_metrics.txt")
-#     # print("Evaluation Metrics:", metrics)
-
-#     # del model
-#     # gc.collect()
-#     # torch.cuda.empty_cache()
-    
-#     model_name = "data/03_models/all-roberta-large-v1-trained"
-#     model = SentenceTransformer(model_name)
-#     model_type = "all-roberta-large-v1-trained-attempt-2"
-#     results_pth = f"data/04_results/{model_type}"
-#     test_data = create_test_dataset()
-#     similarity_results = compute_similarity(test_data=test_data, model=model)
-#     metrics = evaluate_model(similarity_results)
-#     save_metrics(metrics, results_pth, filename=f"evaluation_metrics.txt")
-#     print("Evaluation Metrics:", metrics)
-
-#     del model
-#     gc.collect()
-#     torch.cuda.empty_cache()
-
-#     model_name = "sentence-transformers/all-roberta-large-v1"
-#     model = SentenceTransformer(model_name)
-#     model_type = "all-roberta-large-v1-attempt-2"
-#     results_pth = f"data/04_results/{model_type}"
-#     test_data = create_test_dataset()
-#     similarity_results = compute_similarity(test_data=test_data, model=model)
-#     metrics = evaluate_model(similarity_results)
-#     save_metrics(metrics, results_pth, filename=f"evaluation_metrics.txt")
-#     print("Evaluation Metrics:", metrics)
-    
+    print(metrics)
