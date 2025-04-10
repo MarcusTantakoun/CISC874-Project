@@ -7,11 +7,27 @@ import torch
 
 
 def compute_similarity(test_data, model, batch_size=64, device='cuda'):
+    """
+    Computes similarity scores between anchor and candidate samples in batches.
+
+    Args:
+        test_data (List[Dict]): A list of dictionaries with keys 'anchor', 'positive', and 'negatives'.
+                                'anchor' and 'positive' are strings; 'negatives' is a list of strings.
+        model (SentenceTransformer): The sentence transformer model used for encoding.
+        batch_size (int): The batch size used for processing test data.
+        device (str): The device to run the model on (e.g., 'cuda' or 'cpu').
+
+    Returns:
+        List[Dict]: A list of results for each test instance containing similarity scores, 
+                    the rank of the correct answer, and a correctness flag.
+    """
+    
     results = []
 
     model.to(device)
     model.eval()
 
+    # split up inferencing in batches (64) to speed up process
     with torch.no_grad():
         for start_idx in range(0, len(test_data), batch_size):
             batch = test_data[start_idx: start_idx + batch_size]
@@ -23,7 +39,7 @@ def compute_similarity(test_data, model, batch_size=64, device='cuda'):
             # flatten list of negatives for batch processing
             flat_negatives = [neg for sublist in negatives for neg in sublist]
 
-            # encode all texts
+            # encode batches of texts
             anchor_embeddings = model.encode(anchors, convert_to_tensor=True, device=device)
             positive_embeddings = model.encode(positives, convert_to_tensor=True, device=device)
             negative_embeddings = model.encode(flat_negatives, convert_to_tensor=True, device=device)
@@ -32,11 +48,16 @@ def compute_similarity(test_data, model, batch_size=64, device='cuda'):
             negative_embeddings = negative_embeddings.view(len(batch), -1, negative_embeddings.shape[-1])
 
             for i in range(len(batch)):
+                
+                # calculate cosine similarity scores
                 pos_score = util.pytorch_cos_sim(anchor_embeddings[i], positive_embeddings[i]).item()
                 neg_scores = util.pytorch_cos_sim(anchor_embeddings[i], negative_embeddings[i]).squeeze().tolist()
 
+                # rank all the scares together
                 all_scores = [(pos_score, "positive")] + [(score, "negative") for score in neg_scores]
                 all_scores.sort(reverse=True, key=lambda x: x[0])
+                
+                # retrieve rank of the positive sample
                 positive_rank = next(j for j, (_, label) in enumerate(all_scores) if label == "positive") + 1
 
                 results.append({
@@ -44,13 +65,24 @@ def compute_similarity(test_data, model, batch_size=64, device='cuda'):
                     "positive_score": pos_score,
                     "negative_scores": neg_scores,
                     "positive_rank": positive_rank,
-                    "correct": positive_rank == 1
+                    "correct": positive_rank == 1 # determines if positive sample ranks first
                 })
 
     return results
             
 
 def compute_similarity_01(test_data, model, num_samples=10):
+    """
+    Computes similarity for a limited number of samples, printing scores for inspection.
+
+    Args:
+        test_data (List[Dict]): A list of test items with 'anchor', 'positive', and 'negatives'.
+        model (SentenceTransformer): Sentence encoder model used for computing embeddings.
+        num_samples (int): The number of samples to evaluate.
+
+    Returns:
+        List[Dict]: Evaluation results per sample, including scores and correctness flag.
+    """
     results = []
     max_samples = num_samples
 
@@ -95,18 +127,15 @@ def compute_similarity_01(test_data, model, num_samples=10):
 
 def evaluate_model(results, k=3):
     """
-    Evaluates the model using Precision, Recall, F1-score, Accuracy, Precision@K, and MRR.
+    Evaluates the model using Accuracy (Precision@1), Precision@3, and MRR.
     """
     # Standard classification metrics
     y_true = [1] * len(results)
     y_pred = [1 if item["correct"] else 0 for item in results]
 
-    # precision = precision_score(y_true, y_pred, zero_division=0)
-    # recall = recall_score(y_true, y_pred, zero_division=0)
-    # f1 = f1_score(y_true, y_pred, zero_division=0)
     accuracy = accuracy_score(y_true, y_pred)
 
-    # Precision@K (is the correct answer in the top K?)
+    # Precision@K (is the correct answer in the top K)
     precision_at_k = np.mean([1 if item["positive_rank"] <= k else 0 for item in results])
 
     # Mean Reciprocal Rank (MRR)

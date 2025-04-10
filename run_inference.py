@@ -1,4 +1,8 @@
-# run_inference.py
+"""
+This is run from the `job_run_test_inference.sh` script. First we load the sentence model and run it through testing inference on
+the test dataset. We compute the three scores (top-1 accuracy, top-3 accuracy, and Mean Reciprocal Ranking).
+"""
+
 from sentence_transformers import SentenceTransformer
 from Sem2Plan.pipelines.compare_cos_sim.nodes import compute_similarity, evaluate_model, save_metrics
 from Sem2Plan.pipelines.finetuning_sentence_encoder.finetune_dataset import create_test_dataset
@@ -6,7 +10,7 @@ import gc
 import torch
 
 if __name__ == "__main__":
-    test_data = list(create_test_dataset())  # Fix here if needed
+    test_data = list(create_test_dataset()) 
 
     device = "cuda" if torch.cuda.is_available() else "cpu"
 
