@@ -57,7 +57,6 @@ def compute_similarity_01(test_data, model, num_samples=10):
     for i, item in enumerate(test_data):
         if i >= max_samples:
             break
-        print("Iteration:", i)
 
         anchor = item["anchor"]
         positive = item["positive"]
@@ -79,14 +78,18 @@ def compute_similarity_01(test_data, model, num_samples=10):
         # Find rank of the correct (positive) example (1-based index)
         positive_rank = next(i for i, (_, label) in enumerate(all_scores) if label == "positive") + 1
 
-        # Store results
-        results.append({
+        curr_res = {
             "anchor": anchor,
             "positive_score": pos_score,
             "negative_scores": neg_scores,
             "positive_rank": positive_rank,
             "correct": positive_rank == 1  # Correct if positive is ranked first
-        })
+        }
+        
+        print(f"Results for iteration {i}:\nPositive score: {curr_res['positive_score']}\nNegative Scores:{curr_res['negative_scores']}\nPositive Rank:{curr_res['positive_rank']}\n")
+
+        # Store results
+        results.append(curr_res)
 
     return results
 
