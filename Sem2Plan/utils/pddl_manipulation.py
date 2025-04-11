@@ -154,7 +154,7 @@ def get_manipulated_problem_list(problem, manipulated_problem_num, pollution_cap
 
 if __name__ == "__main__":
     # Load PDDL problem file
-    problem_file_path = "data/01_model_datasets/training/blocksworld/problems/p00/positive.pddl"
+    problem_file_path = "data/05_demonstration/blocksworld/problems/p00/positive.pddl"
     
     if not os.path.exists(problem_file_path):
         raise FileNotFoundError(f"Problem file not found: {problem_file_path}")
@@ -164,12 +164,10 @@ if __name__ == "__main__":
     
     problem = ProblemParser()(problem_str)
 
-    # Generate manipulated problems
-    manipulated_problem_lst, manipulation_details_lst = get_manipulated_problem_list(
-        problem, 10, 3
-    )
+    # generate manipulated problems
+    manipulated_problem_lst, manipulation_details_lst = get_manipulated_problem_list(problem, 10, 3)
 
-    # Print results
+    # print results
     for poll_problem, manipulate_detail in zip(manipulated_problem_lst, manipulation_details_lst):
         print("Manipulation Detail")
         print(manipulate_detail)

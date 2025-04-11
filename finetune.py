@@ -12,14 +12,14 @@ def setup_distributed():
     rank = int(os.environ.get("RANK", 0))
     world_size = int(os.environ.get("WORLD_SIZE", 1))
 
-    # Explicitly set CUDA device
+    # explicitly set CUDA device
     torch.cuda.set_device(local_rank)
 
-    # Ensure process group is initialized
+    # ensure process group is initialized
     if not dist.is_initialized():
         dist.init_process_group(backend='nccl', init_method='env://', rank=rank, world_size=world_size)
 
-    # Explicitly perform barrier with assigned GPU
+    # explicitly perform barrier with assigned GPU
     dist.barrier(device_ids=[local_rank])
 
     if rank == 0:
@@ -28,8 +28,10 @@ def setup_distributed():
 
 if __name__=="__main__":
     
+    # set up distributed training
     local_rank = setup_distributed()
 
+    # setup configuration for encoder
     setup_sentence_encoder_cfg = {
         "model_name": "/home/tant2002/scratch/all-roberta-large-v1",
         "model_type": "bi_encoder",
@@ -37,6 +39,7 @@ if __name__=="__main__":
         "local_rank": local_rank  # Pass to training function
     }
 
+    # setup finetuning configuration
     finetuning_encoder_cfg = {
         "train_batch_size": 32,
         "training_epoch": 40,
@@ -46,4 +49,5 @@ if __name__=="__main__":
     if local_rank == 0:
         print(f"Starting training on rank {local_rank} with config: {setup_sentence_encoder_cfg}")
 
+    # call training function
     train_sentence_encoder(setup_sentence_encoder_cfg=setup_sentence_encoder_cfg, finetuning_encoder_cfg=finetuning_encoder_cfg)

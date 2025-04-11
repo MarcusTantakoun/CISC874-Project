@@ -1,3 +1,7 @@
+"""
+This module sets up the training / testing dataset for training the model.
+"""
+
 import torch
 import os
 import json
@@ -10,20 +14,36 @@ from torch.utils.data import DataLoader
 from datasets import load_dataset
 from pddl.parser.problem import ProblemParser
 from pddl.core import Problem
-
 from ...utils.pddl_manipulation import get_manipulated_problem_list
 
-"""
-This module sets up the training / testing dataset for training the model.
-"""
 
 class TorchDataset(torch.utils.data.Dataset):
-    def __init__(
-        self,
-        dir_path,
-        expand_size = False,
-        estimate_batch_size = 32
-    ):
+    """
+    A PyTorch-compatible dataset class for semantic similarity learning between
+    natural language problem descriptions and PDDL problem files.
+
+    This dataset generates (anchor, positive, negatives) triplets:
+        - anchor: natural language description (from `anchor.nl`)
+        - positive: corresponding correct PDDL problem (from `positive.pddl`)
+        - negatives: 10 manipulated PDDL problems per entry
+
+    Each entry is created by slicing a list of 1000 manipulated problems into 100 groups.
+
+    Attributes:
+        data (pd.DataFrame): Stores metadata including problem name, entry ID,
+                             and content of anchor and positive samples.
+        manipulated_problem_model_dict (dict): Maps unique keys to lists of 10 negative samples.
+    """
+    
+    def __init__(self, dir_path, expand_size = False, estimate_batch_size = 32):
+        """
+        Initializes the TorchDataset object by loading and preparing the dataset.
+
+        Args:
+            dir_path (str): Root directory containing all problem subdirectories.
+            expand_size (bool, optional): Placeholder for future data expansion. Defaults to False.
+            estimate_batch_size (int, optional): Estimated number of manipulated problems to generate. Defaults to 32.
+        """
         self.estimate_batch_size = estimate_batch_size # number of problems to make from a single problem file
         self.expand_size = expand_size
         
@@ -33,6 +53,7 @@ class TorchDataset(torch.utils.data.Dataset):
         
         self.manipulated_problem_model_dict = dict() # key is f'{problem_name}_{problem_model}'
         
+        # iterate through each problem...
         for problem_filepath in tqdm(problem_filepaths, desc="Setting up dataset"):
 
             anchor_path = f"{problem_filepath}/anchor.nl"
@@ -53,6 +74,7 @@ class TorchDataset(torch.utils.data.Dataset):
             query_content = query_str
             positive_content = problem_str
 
+            # retrieve list of negative samples (1000) from a single problem set
             manipulated_problem_list, _ = get_manipulated_problem_list(problem_model, self.estimate_batch_size, 4)
             
             assert len(manipulated_problem_list) == 1000, f"Expected 1000 problems per problem file, got {len(manipulated_problem_list)}"
@@ -77,9 +99,23 @@ class TorchDataset(torch.utils.data.Dataset):
                 }
 
     def __len__(self):
+        """Returns the number of entries in the dataset."""
         return len(self.data)
         
     def __getitem__(self, idx):
+        """
+        Retrieves the dataset entry at the given index.
+
+        Args:
+            idx (int): Index of the desired entry.
+
+        Returns:
+            dict: {
+                'anchor': str,          # Natural language description
+                'positive': str,        # Correct PDDL problem
+                'negatives': List[str]  # 10 manipulated PDDL problems
+            }
+        """
         row = self.data.iloc[idx]
         
         anchor = row["query_content"]
@@ -100,6 +136,7 @@ class TorchDataset(torch.utils.data.Dataset):
         return output_dict
     
     def shuffle(self):
+        """Shuffles the dataset entries randomly in place."""
         self.data = self.data.sample(frac=1).reset_index(drop=True)
 
 
@@ -140,12 +177,8 @@ def create_test_dataset():
 def generate_dataset(data_path, save_path, total_num_examples = 1.0e5, chunksize=5000):
     """
     Generates training dataset by sampling from a TorchDataset object and saving it 
-    to JSONL files
+    to JSONL files by certain chunk sizes.
     """
-    
-    # data_path should be something like "data/01_raw_dataset/training/"
-    # save_path should be something like "data/02_intermediate_dataset/training/"
-    # data_dir = os.path.join(os.environ['WORKING_DIR'], data_path)
     
     data_dir = data_path
     train_dataset = TorchDataset(dir_path=data_dir, expand_size=False, estimate_batch_size=1000)
@@ -157,7 +190,7 @@ def generate_dataset(data_path, save_path, total_num_examples = 1.0e5, chunksize
     file_id = 0
     num_count = 0
     output_list = []
-    pbar = tqdm(total=train_dataset_length, desc="Generating training dataset")
+    pbar = tqdm(total=train_dataset_length, desc="Generating dataset")
     
     while num_count < train_dataset_length:
         for i in range(len(train_dataset)):
@@ -179,8 +212,8 @@ def generate_dataset(data_path, save_path, total_num_examples = 1.0e5, chunksize
     pbar.close()
     
     
-if __name__ == "__main__":
+# if __name__ == "__main__":
     # generate_dataset(data_path="data/01_raw_dataset/training/", save_path="data/02_intermediate_dataset/training/")
-    generate_dataset(data_path="data/01_raw_dataset/testing/", save_path="data/02_intermediate_dataset/testing/")
+    # generate_dataset(data_path="data/01_raw_dataset/testing/", save_path="data/02_intermediate_dataset/testing/")
 
 

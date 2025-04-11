@@ -15,6 +15,7 @@ import time
 import torch
 import torch.distributed as dist
 
+
 class TimeLimitCallback(TrainerCallback):
     """Saves checkpoint when <10 minutes remain in SLURM job"""
     def __init__(self, time_limit_seconds, output_dir):
@@ -63,7 +64,17 @@ class EarlyStoppingCallback(TrainerCallback):
                     control.should_training_stop = True     
 
 
+
 def train_sentence_encoder(setup_sentence_encoder_cfg, finetuning_encoder_cfg):
+    """
+    Fine-tunes a sentence encoder model using distributed training and triplet loss.
+
+    Args:
+        setup_sentence_encoder_cfg (dict): Configuration dictionary for initializing the base sentence encoder model.
+                                            Expected keys: 'model_name', etc.
+        finetuning_encoder_cfg (dict): Configuration dictionary for training hyperparameters.
+                                       Expected keys: 'train_batch_size', 'training_epoch'.
+    """
     
     # initialize sentence encoder cfg
     train_batch_size = finetuning_encoder_cfg['train_batch_size']
@@ -74,21 +85,17 @@ def train_sentence_encoder(setup_sentence_encoder_cfg, finetuning_encoder_cfg):
     rank = int(os.environ.get("RANK", 0))
     world_size = int(os.environ.get("WORLD_SIZE", 1))
 
-    # Use assigned GPU
-    torch.cuda.set_device(local_rank)
+    torch.cuda.set_device(local_rank) # use assigned GPU
+    dist.barrier(device_ids=[local_rank]) # ensure NCCL correctly maps ranks to GPUs
 
-    # Ensure NCCL correctly maps ranks to GPUs
-    dist.barrier(device_ids=[local_rank])
-
-    # Clear GPU cache
     with torch.cuda.device(local_rank):
         torch.cuda.empty_cache()
 
-    # Initialize model
+    # initialize model
     sentence_model = create_sentence_encoder_helper(setup_sentence_encoder_cfg)
     sentence_model = sentence_model.to(f"cuda:{local_rank}")
 
-    # Verify device placement
+    # verify device placement
     for p in sentence_model.parameters():
         assert p.device == torch.device(f"cuda:{local_rank}"), f"Model not on correct GPU: {p.device}"
 
@@ -106,6 +113,7 @@ def train_sentence_encoder(setup_sentence_encoder_cfg, finetuning_encoder_cfg):
     # set train loss function
     train_loss = losses.MultipleNegativesRankingLoss(model=sentence_model)
     
+    # set up specific training arguments
     args = SentenceTransformerTrainingArguments(
         output_dir=output_dir if rank == 0 else None,
         per_device_train_batch_size=train_batch_size,
@@ -129,12 +137,12 @@ def train_sentence_encoder(setup_sentence_encoder_cfg, finetuning_encoder_cfg):
         dataloader_drop_last=True
     )
     
-    # Prepare callbacks - keep EarlyStopping and add TimeLimit
+    # prepare callbacks - keep EarlyStopping and add TimeLimit
     callbacks = [
         EarlyStoppingCallback(early_stopping_patience=8, early_stopping_threshold=0.05)
     ]
     
-    # Add time limit callback if running under SLURM
+    # add time limit callback if running under SLURM
     if 'SLURM_JOB_TIME_LIMIT' in os.environ and rank == 0:
         try:
             # Parse SLURM time format (DD-HH:MM:SS)
@@ -153,6 +161,7 @@ def train_sentence_encoder(setup_sentence_encoder_cfg, finetuning_encoder_cfg):
             print(f"⚠️ Failed to parse SLURM time limit: {e}")
             
     
+    # set up the specific training argument
     trainer = SentenceTransformerTrainer(
         model=sentence_model,
         args=args,
@@ -161,7 +170,7 @@ def train_sentence_encoder(setup_sentence_encoder_cfg, finetuning_encoder_cfg):
         callbacks=callbacks
     )
     
-    trainer.train()
+    trainer.train() # train model (~3-4 hrs for both models)
     
     if rank == 0:
         total_samples = len(train_dataset) * training_epoch

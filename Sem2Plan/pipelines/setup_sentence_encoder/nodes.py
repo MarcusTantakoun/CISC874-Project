@@ -1,33 +1,23 @@
+"""
+Since SentenceTransformer expects models from sentence-transformers/*, 
+you need to manually wrap CodeBERT as a bi-encoder.
+"""
+
 from sentence_transformers import SentenceTransformer, models
 
-"""
-Since SentenceTransformer expects models from sentence-transformers/*, you need to manually wrap CodeBERT as a bi-encoder.
-"""
-
-# Modify create_sentence_encoder_helper to wrap CodeBERT with a mean-pooling strategy:
 def create_sentence_encoder_helper(setup_sentence_encoder_cfg):
     model_name = setup_sentence_encoder_cfg['model_name']
     model_type = setup_sentence_encoder_cfg['model_type']
 
     if model_type == "bi_encoder":
-        if model_name == "/home/tant2002/scratch/codebert-base":
-            # Load CodeBERT as a Transformer model
-            word_embedding_model = models.Transformer(model_name, max_seq_length=512)
 
-            # Apply mean pooling (since CodeBERT outputs token-level embeddings)
-            pooling_model = models.Pooling(
-                word_embedding_model.get_word_embedding_dimension(), pooling_mode_mean_tokens=True
-            )
-
-            # Wrap CodeBERT as a SentenceTransformer model
-            model = SentenceTransformer(modules=[word_embedding_model, pooling_model])
-
-        elif model_name == "/home/tant2002/scratch/all-roberta-large-v1":
-            # Load RoBERTa-large as a prebuilt SentenceTransformer model
+        try:
             model = SentenceTransformer(model_name)
 
-        else:
-            raise ValueError(f"Unsupported model name: {model_name}")
+        except ValueError as ve:
+            print(f"[ERROR] {ve}")
+            print(f"Unsupported model name: {model_name}")
+            return None
 
         return model
     else:
